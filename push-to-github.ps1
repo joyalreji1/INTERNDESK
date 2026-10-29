@@ -21,3 +21,4 @@ if ($LASTEXITCODE -eq 0) {
 } else {
     Write-Host "Push failed with exit code $LASTEXITCODE." -ForegroundColor Red
 }
+
