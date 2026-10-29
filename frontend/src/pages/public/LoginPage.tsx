@@ -2,7 +2,7 @@ import React, { useState } from 'react';
 import { Link, useNavigate, useLocation } from 'react-router-dom';
 import { useAuth } from '@/context/AuthContext';
 import { Logo } from '@/components/common/Logo';
-import { AlertCircle, User, Lock, CheckCircle2, Eye, EyeOff, ArrowRight, ShieldCheck, Building2, GraduationCap } from 'lucide-react';
+import { AlertCircle, Eye, EyeOff } from 'lucide-react';
 
 export const LoginPage: React.FC = () => {
   const { login } = useAuth();
@@ -17,9 +17,10 @@ export const LoginPage: React.FC = () => {
 
   const from = (location.state as any)?.from?.pathname;
 
-  const performLogin = async (loginEmail: string, loginPassword: string) => {
-    const cleanEmail = loginEmail.trim();
-    if (!cleanEmail || !loginPassword) {
+  const handleSubmit = async (e: React.FormEvent) => {
+    e.preventDefault();
+    const cleanEmail = email.trim();
+    if (!cleanEmail || !password) {
       setError('Please provide both Email Address / Username and Password.');
       return;
     }
@@ -28,7 +29,7 @@ export const LoginPage: React.FC = () => {
     setLoading(true);
 
     try {
-      const loggedInUser = await login(cleanEmail, loginPassword);
+      const loggedInUser = await login(cleanEmail, password);
       if (from) {
         navigate(from, { replace: true });
       } else {
@@ -38,21 +39,10 @@ export const LoginPage: React.FC = () => {
         else navigate('/', { replace: true });
       }
     } catch (err: any) {
-      setError(err.message || 'Invalid email/username or password. Default demo password is: Password@123');
+      setError(err.message || 'Invalid email/username or password. Please verify your credentials.');
     } finally {
       setLoading(false);
     }
-  };
-
-  const handleSubmit = async (e: React.FormEvent) => {
-    e.preventDefault();
-    await performLogin(email, password);
-  };
-
-  const fillDemoCredentials = (demoEmail: string, demoPass: string) => {
-    setEmail(demoEmail);
-    setPassword(demoPass);
-    setError(null);
   };
 
   return (
@@ -77,12 +67,7 @@ export const LoginPage: React.FC = () => {
             {error && (
               <div className="p-3 bg-[#FDE8E8] border border-[#F4B8B8] text-[#C94242] text-xs rounded-sm flex items-start gap-2">
                 <AlertCircle className="w-4 h-4 shrink-0 mt-0.5" />
-                <div className="flex-1">
-                  <p className="font-semibold">{error}</p>
-                  <p className="text-[11px] text-[#A82B2B] mt-1">
-                    Tip: Click one of the 1-Click login buttons below to instantly sign in with pre-seeded accounts.
-                  </p>
-                </div>
+                <span className="font-semibold">{error}</span>
               </div>
             )}
 
@@ -108,9 +93,6 @@ export const LoginPage: React.FC = () => {
                     className="w-full px-3 py-2 text-sm text-[#333333] bg-white border border-[#D4DCE6] rounded-sm focus:border-[#4779B8] focus:outline-none focus:ring-1 focus:ring-[#4779B8]"
                   />
                 </div>
-                <p className="text-[11px] text-[#777777] mt-0.5">
-                  Accepts email (e.g. <span className="font-mono">admin@interndesk.com</span>) or shortcut (<span className="font-mono">admin</span>, <span className="font-mono">student</span>, <span className="font-mono">company</span>)
-                </p>
               </div>
 
               <div>
@@ -152,7 +134,7 @@ export const LoginPage: React.FC = () => {
                 <button
                   type="submit"
                   disabled={loading}
-                  className="w-full py-2 px-4 bg-[#4779B8] hover:bg-[#356F9D] text-white font-bold text-sm rounded-sm border border-[#356F9D] shadow-sm transition-colors disabled:opacity-50"
+                  className="w-full py-2.5 px-4 bg-[#4779B8] hover:bg-[#356F9D] text-white font-bold text-sm rounded-sm border border-[#356F9D] shadow-sm transition-colors disabled:opacity-50"
                 >
                   {loading ? 'Authenticating...' : 'Sign In'}
                 </button>
@@ -164,110 +146,6 @@ export const LoginPage: React.FC = () => {
               <Link to="/register" className="text-[#4779B8] font-bold hover:underline">
                 Register as Student or Company
               </Link>
-            </div>
-          </div>
-        </div>
-
-        {/* Demo Fast-Switch Buttons for Examiners / Evaluators */}
-        <div className="bg-white border border-[#D4DCE6] rounded-sm p-4 space-y-3 text-xs shadow-sm">
-          <div className="flex items-center justify-between border-b border-[#D4DCE6] pb-1.5">
-            <span className="font-bold text-[#356F9D] uppercase tracking-wide text-[11px]">
-              Evaluation Quick Access (1-Click Login)
-            </span>
-            <span className="text-[10px] bg-[#EAF2FC] text-[#356F9D] px-2 py-0.5 rounded font-mono font-bold">
-              Password: Password@123
-            </span>
-          </div>
-
-          <div className="grid grid-cols-1 sm:grid-cols-3 gap-2">
-            {/* Student */}
-            <div className="border border-[#B8C6D6] rounded-sm p-2.5 bg-[#FAFBFD] flex flex-col justify-between">
-              <div>
-                <div className="flex items-center gap-1.5 font-bold text-[#356F9D] mb-1">
-                  <GraduationCap className="w-3.5 h-3.5" />
-                  <span>Student</span>
-                </div>
-                <p className="text-[11px] text-[#555] font-mono truncate" title="arjun.sharma@student.edu">
-                  arjun.sharma@student.edu
-                </p>
-              </div>
-              <div className="mt-2.5 flex flex-col gap-1">
-                <button
-                  type="button"
-                  disabled={loading}
-                  onClick={() => performLogin('arjun.sharma@student.edu', 'Password@123')}
-                  className="w-full py-1 bg-[#4779B8] hover:bg-[#356F9D] text-white rounded text-[11px] font-bold transition-colors disabled:opacity-50"
-                >
-                  Direct Sign In
-                </button>
-                <button
-                  type="button"
-                  onClick={() => fillDemoCredentials('arjun.sharma@student.edu', 'Password@123')}
-                  className="w-full py-0.5 text-[10px] text-[#4779B8] hover:underline"
-                >
-                  Fill Form
-                </button>
-              </div>
-            </div>
-
-            {/* Company */}
-            <div className="border border-[#B8C6D6] rounded-sm p-2.5 bg-[#FAFBFD] flex flex-col justify-between">
-              <div>
-                <div className="flex items-center gap-1.5 font-bold text-[#356F9D] mb-1">
-                  <Building2 className="w-3.5 h-3.5" />
-                  <span>Company</span>
-                </div>
-                <p className="text-[11px] text-[#555] font-mono truncate" title="hr@technova.io">
-                  hr@technova.io
-                </p>
-              </div>
-              <div className="mt-2.5 flex flex-col gap-1">
-                <button
-                  type="button"
-                  disabled={loading}
-                  onClick={() => performLogin('hr@technova.io', 'Password@123')}
-                  className="w-full py-1 bg-[#4779B8] hover:bg-[#356F9D] text-white rounded text-[11px] font-bold transition-colors disabled:opacity-50"
-                >
-                  Direct Sign In
-                </button>
-                <button
-                  type="button"
-                  onClick={() => fillDemoCredentials('hr@technova.io', 'Password@123')}
-                  className="w-full py-0.5 text-[10px] text-[#4779B8] hover:underline"
-                >
-                  Fill Form
-                </button>
-              </div>
-            </div>
-
-            {/* Admin */}
-            <div className="border border-[#B8C6D6] rounded-sm p-2.5 bg-[#FAFBFD] flex flex-col justify-between">
-              <div>
-                <div className="flex items-center gap-1.5 font-bold text-[#356F9D] mb-1">
-                  <ShieldCheck className="w-3.5 h-3.5" />
-                  <span>Administrator</span>
-                </div>
-                <p className="text-[11px] text-[#555] font-mono truncate" title="admin@interndesk.com">
-                  admin@interndesk.com
-                </p>
-              </div>
-              <div className="mt-2.5 flex flex-col gap-1">
-                <button
-                  type="button"
-                  disabled={loading}
-                  onClick={() => performLogin('admin@interndesk.com', 'Password@123')}
-                  className="w-full py-1 bg-[#4779B8] hover:bg-[#356F9D] text-white rounded text-[11px] font-bold transition-colors disabled:opacity-50"
-                >
-                  Direct Sign In
-                </button>
-                <button
-                  type="button"
-                  onClick={() => fillDemoCredentials('admin@interndesk.com', 'Password@123')}
-                  className="w-full py-0.5 text-[10px] text-[#4779B8] hover:underline"
-                >
-                  Fill Form
-                </button>
-              </div>
             </div>
           </div>
         </div>
