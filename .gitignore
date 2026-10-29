@@ -1,0 +1,45 @@
+# Java & Maven
+target/
+*.class
+*.jar
+*.war
+*.ear
+*.nar
+*.zip
+*.tar.gz
+*.rar
+backend/target/
+backend/classpath.txt
+backend/sources.txt
+backend/test-sources.txt
+
+# Node & Frontend
+node_modules/
+frontend/node_modules/
+dist/
+frontend/dist/
+dist-ssr/
+*.local
+.npm
+.eslintcache
+
+# Logs & Temporary files
+*.log
+logs/
+tmp/
+temp/
+
+# User Uploads
+backend/uploads/resumes/*
+!backend/uploads/resumes/.gitkeep
+uploads/*
+!uploads/.gitkeep
+
+# IDE & OS metadata
+.idea/
+*.iml
+.vscode/
+.DS_Store
+Thumbs.db
+Desktop.ini
+
