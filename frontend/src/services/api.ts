@@ -55,7 +55,15 @@ async function request<T>(endpoint: string, options: RequestInit = {}): Promise<
   }
 
   if (!response.ok) {
-    const errorMsg = data?.message || data?.error || `HTTP error ${response.status}`;
+    let errorMsg = data?.message || data?.error || `HTTP error ${response.status}`;
+    if (data?.errors && typeof data.errors === 'object') {
+      const errorList = Object.entries(data.errors)
+        .map(([k, v]) => `${k}: ${v}`)
+        .join(', ');
+      if (errorList) {
+        errorMsg = `${errorMsg} (${errorList})`;
+      }
+    }
     throw new ApiError(response.status, errorMsg, data);
   }
 

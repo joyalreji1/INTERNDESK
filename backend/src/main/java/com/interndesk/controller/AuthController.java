@@ -52,6 +52,10 @@ public class AuthController {
     @Operation(summary = "Get current authenticated user's basic info")
     public ResponseEntity<ApiResponse<AuthDto.UserProfileResponse>> me(
             @AuthenticationPrincipal UserDetails principal) {
+        if (principal == null) {
+            return ResponseEntity.status(HttpStatus.UNAUTHORIZED)
+                .body(ApiResponse.error("Not authenticated"));
+        }
         User user = authService.getCurrentUser(principal.getUsername());
         AuthDto.UserProfileResponse resp = new AuthDto.UserProfileResponse();
         resp.setId(user.getId());

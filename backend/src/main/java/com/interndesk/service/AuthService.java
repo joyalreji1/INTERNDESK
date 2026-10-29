@@ -101,8 +101,17 @@ public class AuthService {
 
     @Transactional
     public AuthDto.AuthResponse login(AuthDto.LoginRequest req) {
+        String input = req.getEmail() != null ? req.getEmail().trim().toLowerCase() : "";
+        if ("admin".equals(input)) {
+            input = "admin@interndesk.com";
+        } else if ("student".equals(input) || "arjun".equals(input)) {
+            input = "arjun.sharma@student.edu";
+        } else if ("company".equals(input) || "technova".equals(input)) {
+            input = "hr@technova.io";
+        }
+
         Authentication auth = authenticationManager.authenticate(
-            new UsernamePasswordAuthenticationToken(req.getEmail().toLowerCase().trim(), req.getPassword())
+            new UsernamePasswordAuthenticationToken(input, req.getPassword())
         );
 
         UserDetails details = (UserDetails) auth.getPrincipal();

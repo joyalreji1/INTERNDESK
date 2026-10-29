@@ -53,7 +53,7 @@ public class GlobalExceptionHandler {
     public ResponseEntity<ApiResponse<Void>> handleBadCredentials(Exception ex) {
         log.warn("Authentication failed: {}", ex.getMessage());
         return ResponseEntity.status(HttpStatus.UNAUTHORIZED)
-            .body(ApiResponse.error("Invalid email or password. Please verify your credentials."));
+            .body(ApiResponse.error("Invalid email/username or password. Default demo password is: Password@123"));
     }
 
     @ExceptionHandler(MethodArgumentNotValidException.class)

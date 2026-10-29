@@ -55,8 +55,7 @@ public class AuthDto {
 
     @Data
     public static class LoginRequest {
-        @NotBlank(message = "Email is required")
-        @Email(message = "Invalid email")
+        @NotBlank(message = "Email or username is required")
         private String email;
 
         @NotBlank(message = "Password is required")
