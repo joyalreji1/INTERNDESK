@@ -104,14 +104,16 @@ public class AuthService {
         String input = req.getEmail() != null ? req.getEmail().trim().toLowerCase() : "";
         if ("admin".equals(input)) {
             input = "admin@interndesk.com";
-        } else if ("student".equals(input) || "arjun".equals(input)) {
+        } else if ("student".equals(input) || "arjun".equals(input) || "arjun.sharma".equals(input)) {
             input = "arjun.sharma@student.edu";
         } else if ("company".equals(input) || "technova".equals(input)) {
             input = "hr@technova.io";
         }
 
+        String rawPassword = req.getPassword() != null ? req.getPassword().trim() : "";
+
         Authentication auth = authenticationManager.authenticate(
-            new UsernamePasswordAuthenticationToken(input, req.getPassword())
+            new UsernamePasswordAuthenticationToken(input, rawPassword)
         );
 
         UserDetails details = (UserDetails) auth.getPrincipal();

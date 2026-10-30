@@ -20,7 +20,8 @@ export const LoginPage: React.FC = () => {
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     const cleanEmail = email.trim();
-    if (!cleanEmail || !password) {
+    const cleanPassword = password.trim();
+    if (!cleanEmail || !cleanPassword) {
       setError('Please provide both Email Address / Username and Password.');
       return;
     }
@@ -29,7 +30,7 @@ export const LoginPage: React.FC = () => {
     setLoading(true);
 
     try {
-      const loggedInUser = await login(cleanEmail, password);
+      const loggedInUser = await login(cleanEmail, cleanPassword);
       if (from) {
         navigate(from, { replace: true });
       } else {
