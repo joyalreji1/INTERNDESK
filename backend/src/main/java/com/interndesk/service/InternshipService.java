@@ -63,6 +63,13 @@ public class InternshipService {
         Company company = companyRepository.findByUserId(userId)
             .orElseThrow(() -> new ResourceNotFoundException("Company profile not found"));
 
+        if (company.getVerificationStatus() != Company.VerificationStatus.VERIFIED) {
+            throw new com.interndesk.exception.BusinessException(
+                "Your company account is currently " + company.getVerificationStatus() +
+                ". Only administrators can accredit companies to publish active internship vacancies."
+            );
+        }
+
         Internship internship = Internship.builder()
             .company(company)
             .title(req.getTitle())

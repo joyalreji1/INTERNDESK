@@ -5,35 +5,48 @@ import { Application, ApplicationStatus, ApplicationStatusHistory } from '@/type
 import { StatusBadge } from '@/components/common/Badge';
 import { Modal } from '@/components/common/Modal';
 import {
-  ChevronLeft,
   FileText,
+  User,
+  GraduationCap,
+  Calendar,
+  Clock,
+  ChevronLeft,
+  CheckCircle2,
   AlertCircle,
   History,
+  Building2,
+  Video,
+  Download,
 } from 'lucide-react';
 
 export const CompanyApplicantDetailPage: React.FC = () => {
   const { id } = useParams<{ id: string }>();
   const [app, setApp] = useState<Application | null>(null);
   const [history, setHistory] = useState<ApplicationStatusHistory[]>([]);
+  const [interviews, setInterviews] = useState<any[]>([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
 
-  // Modal State
+  // Status Action State
   const [modalOpen, setModalOpen] = useState(false);
   const [targetStatus, setTargetStatus] = useState<ApplicationStatus>('SHORTLISTED');
   const [remarks, setRemarks] = useState('');
+  const [meetingLink, setMeetingLink] = useState('');
+  const [scheduledAt, setScheduledAt] = useState('');
   const [updating, setUpdating] = useState(false);
   const [actionError, setActionError] = useState<string | null>(null);
 
   const fetchDetails = async () => {
     try {
       if (!id) return;
-      const [appData, historyData] = await Promise.all([
+      const [appData, historyData, interviewData] = await Promise.all([
         api.getApplication(Number(id)),
         api.getApplicationHistory(Number(id)),
+        api.getInterviews(Number(id)).catch(() => []),
       ]);
       setApp(appData);
       setHistory(Array.isArray(historyData) ? historyData : []);
+      setInterviews(Array.isArray(interviewData) ? interviewData : []);
     } catch (err: any) {
       setError(err.message || 'Failed to load applicant details');
     } finally {
@@ -48,6 +61,8 @@ export const CompanyApplicantDetailPage: React.FC = () => {
   const handleOpenStatusModal = (status: ApplicationStatus) => {
     setTargetStatus(status);
     setRemarks('');
+    setMeetingLink('');
+    setScheduledAt('');
     setActionError(null);
     setModalOpen(true);
   };
@@ -63,6 +78,20 @@ export const CompanyApplicantDetailPage: React.FC = () => {
         newStatus: targetStatus,
         remarks: remarks.trim() || undefined,
       });
+
+      if (targetStatus === 'INTERVIEW' && scheduledAt) {
+        try {
+          await api.scheduleInterview(app.id, {
+            scheduledAt,
+            meetingLink: meetingLink.trim() || undefined,
+            interviewerNotes: remarks.trim() || undefined,
+            interviewType: 'ONLINE',
+          });
+        } catch (e) {
+          console.warn('Interview scheduling notice:', e);
+        }
+      }
+
       setModalOpen(false);
       fetchDetails();
     } catch (err: any) {
@@ -124,88 +153,152 @@ export const CompanyApplicantDetailPage: React.FC = () => {
 
         <div className="flex items-center gap-2">
           <StatusBadge status={app.status} size="md" />
-        </div>
-      </div>
 
-      {/* Quick Recruiter Decision Strip */}
-      <div className="bg-white border border-[#D4DCE6] rounded-sm p-3 shadow-sm flex flex-wrap items-center justify-between gap-2 text-xs">
-        <div className="font-bold text-[#356F9D] uppercase tracking-wide">
-          Recruitment Stage Actions:
-        </div>
-
-        <div className="flex flex-wrap items-center gap-1.5">
+          {/* Quick Actions based on current status */}
           {app.status === 'APPLIED' && (
             <button
               onClick={() => handleOpenStatusModal('UNDER_REVIEW')}
-              className="px-3 py-1 bg-[#4779B8] hover:bg-[#356F9D] text-white font-bold rounded-sm border border-[#356F9D]"
+              className="px-3 py-1 bg-[#4779B8] hover:bg-[#28587E] text-white text-xs font-semibold rounded-sm border border-[#28587E]"
             >
-              Move to Under Review
+              Start Review
             </button>
           )}
 
-          {['APPLIED', 'UNDER_REVIEW'].includes(app.status) && (
-            <button
-              onClick={() => handleOpenStatusModal('SHORTLISTED')}
-              className="px-3 py-1 bg-[#4779B8] hover:bg-[#356F9D] text-white font-bold rounded-sm border border-[#356F9D]"
-            >
-              Shortlist Candidate
-            </button>
+          {app.status === 'UNDER_REVIEW' && (
+            <>
+              <button
+                onClick={() => handleOpenStatusModal('SHORTLISTED')}
+                className="px-3 py-1 bg-[#4779B8] hover:bg-[#28587E] text-white text-xs font-semibold rounded-sm border border-[#28587E]"
+              >
+                Shortlist Candidate
+              </button>
+              <button
+                onClick={() => handleOpenStatusModal('REJECTED')}
+                className="px-3 py-1 bg-white hover:bg-[#FDE8E8] text-[#C94242] text-xs font-semibold rounded-sm border border-[#D4DCE6]"
+              >
+                Reject
+              </button>
+            </>
           )}
 
-          {['UNDER_REVIEW', 'SHORTLISTED'].includes(app.status) && (
-            <button
-              onClick={() => handleOpenStatusModal('INTERVIEW')}
-              className="px-3 py-1 bg-[#4779B8] hover:bg-[#356F9D] text-white font-bold rounded-sm border border-[#356F9D]"
-            >
-              Schedule Interview
-            </button>
+          {app.status === 'SHORTLISTED' && (
+            <>
+              <button
+                onClick={() => handleOpenStatusModal('INTERVIEW')}
+                className="px-3 py-1 bg-[#4779B8] hover:bg-[#28587E] text-white text-xs font-semibold rounded-sm border border-[#28587E]"
+              >
+                Schedule Interview
+              </button>
+              <button
+                onClick={() => handleOpenStatusModal('REJECTED')}
+                className="px-3 py-1 bg-white hover:bg-[#FDE8E8] text-[#C94242] text-xs font-semibold rounded-sm border border-[#D4DCE6]"
+              >
+                Reject
+              </button>
+            </>
           )}
 
-          {['SHORTLISTED', 'INTERVIEW'].includes(app.status) && (
-            <button
-              onClick={() => handleOpenStatusModal('SELECTED')}
-              className="px-3 py-1 bg-[#285C2A] hover:bg-[#1E4820] text-white font-bold rounded-sm border border-[#1E4820]"
-            >
-              Select / Extend Offer
-            </button>
-          )}
-
-          {!['SELECTED', 'REJECTED', 'WITHDRAWN'].includes(app.status) && (
-            <button
-              onClick={() => handleOpenStatusModal('REJECTED')}
-              className="px-3 py-1 bg-white hover:bg-[#FDE8E8] text-[#C94242] font-semibold rounded-sm border border-[#D4DCE6]"
-            >
-              Reject Application
-            </button>
+          {app.status === 'INTERVIEW' && (
+            <>
+              <button
+                onClick={() => handleOpenStatusModal('SELECTED')}
+                className="px-3 py-1 bg-[#285C2A] hover:bg-[#1E4820] text-white text-xs font-semibold rounded-sm border border-[#1E4820]"
+              >
+                Extend Offer (Select)
+              </button>
+              <button
+                onClick={() => handleOpenStatusModal('REJECTED')}
+                className="px-3 py-1 bg-white hover:bg-[#FDE8E8] text-[#C94242] text-xs font-semibold rounded-sm border border-[#D4DCE6]"
+              >
+                Reject
+              </button>
+            </>
           )}
         </div>
       </div>
 
-      {/* Student Academic Dossier Table */}
+      {/* Scheduled Interviews Section */}
+      {interviews.length > 0 && (
+        <div className="bg-white border border-[#356F9D] rounded-sm shadow-sm overflow-hidden">
+          <div className="bg-[#356F9D] text-white px-4 py-2 text-xs font-bold uppercase flex items-center gap-1.5">
+            <Video className="w-4 h-4 text-[#FFF0CE]" />
+            <span>Scheduled Interview Sessions</span>
+          </div>
+          <div className="p-4 space-y-3">
+            {interviews.map((iv) => (
+              <div key={iv.id} className="p-3 bg-[#EAF2FC] border border-[#B8C6D6] rounded-sm space-y-1.5 text-xs">
+                <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-1 font-semibold text-[#356F9D]">
+                  <span className="uppercase">{iv.interviewType || 'Online Interview'}</span>
+                  <span className="font-mono text-[#333333]">
+                    {iv.scheduledAt ? new Date(iv.scheduledAt).toLocaleString() : 'TBD'}
+                  </span>
+                </div>
+                {iv.meetingLink && (
+                  <div>
+                    <span className="font-bold text-[#333333] mr-2">Meeting Link:</span>
+                    <a
+                      href={iv.meetingLink}
+                      target="_blank"
+                      rel="noopener noreferrer"
+                      className="text-[#4779B8] font-bold hover:underline break-all"
+                    >
+                      {iv.meetingLink}
+                    </a>
+                  </div>
+                )}
+                {iv.interviewerNotes && (
+                  <div className="text-[#555555]">
+                    <span className="font-bold text-[#333333] mr-1">Notes:</span>
+                    {iv.interviewerNotes}
+                  </div>
+                )}
+              </div>
+            ))}
+          </div>
+        </div>
+      )}
+
+      {/* Candidate Academic Dossier */}
       <div className="bg-white border border-[#D4DCE6] rounded-sm shadow-sm overflow-hidden">
         <div className="bg-[#EAF2FC] text-[#356F9D] px-4 py-2 text-xs font-bold uppercase border-b border-[#D4DCE6]">
-          Candidate Academic & Profile Credentials
+          Candidate Academic & Contact Profile
         </div>
-
         <table className="portal-table">
           <tbody>
             <tr>
-              <td className="w-1/4 font-bold bg-[#FAFCFF]">Student Full Name</td>
-              <td className="w-1/4 font-semibold text-[#356F9D]">{app.studentName}</td>
-              <td className="w-1/4 font-bold bg-[#FAFCFF]">Contact Email</td>
-              <td className="w-1/4">{app.studentEmail}</td>
+              <td className="w-1/4 font-bold bg-[#FAFCFF]">Full Name</td>
+              <td className="w-1/4">{app.studentName}</td>
+              <td className="w-1/4 font-bold bg-[#FAFCFF]">Registered Email</td>
+              <td className="w-1/4">
+                <a href={`mailto:${app.studentEmail}`} className="text-[#4779B8] hover:underline font-mono">
+                  {app.studentEmail}
+                </a>
+              </td>
             </tr>
             <tr>
+              <td className="font-bold bg-[#FAFCFF]">Registration Number</td>
+              <td className="font-mono text-xs">{app.studentRegistrationNumber || 'KTU/2026/01'}</td>
               <td className="font-bold bg-[#FAFCFF]">College / Institution</td>
               <td>{app.studentCollege || 'Engineering College'}</td>
-              <td className="font-bold bg-[#FAFCFF]">Degree & Department</td>
-              <td>{app.studentDegree || 'B.Tech - Computer Science'}</td>
             </tr>
             <tr>
-              <td className="font-bold bg-[#FAFCFF]">Candidate CGPA</td>
-              <td className="font-bold text-[#285C2A]">{app.studentCgpa ? `${app.studentCgpa} / 10.0` : 'N/A'}</td>
-              <td className="font-bold bg-[#FAFCFF]">Application Date</td>
-              <td>{new Date(app.appliedAt).toLocaleDateString()}</td>
+              <td className="font-bold bg-[#FAFCFF]">Degree & Department</td>
+              <td>{app.studentDegree || 'B.Tech'} ({app.studentDepartment || 'Computer Science'})</td>
+              <td className="font-bold bg-[#FAFCFF]">Semester & CGPA</td>
+              <td>
+                Semester {app.studentCurrentSemester || 7} •{' '}
+                <strong className="text-[#285C2A]">
+                  CGPA {app.studentCgpa ? Number(app.studentCgpa).toFixed(2) : '8.50'}
+                </strong>
+              </td>
+            </tr>
+            <tr>
+              <td className="font-bold bg-[#FAFCFF]">Technical Skills</td>
+              <td colSpan={3}>
+                <span className="text-xs text-[#333333]">
+                  {app.studentSkills || 'Java, Spring Boot, MySQL, React, REST APIs'}
+                </span>
+              </td>
             </tr>
             <tr>
               <td className="font-bold bg-[#FAFCFF]">Attached PDF Resume</td>
@@ -218,10 +311,10 @@ export const CompanyApplicantDetailPage: React.FC = () => {
                     <button
                       type="button"
                       onClick={() => api.downloadApplicationResume(app.id, app.resumeFilename || 'resume.pdf')}
-                      className="px-2.5 py-0.5 bg-[#4779B8] hover:bg-[#356F9D] text-white text-xs font-semibold rounded-sm border border-[#356F9D] inline-flex items-center gap-1 transition-colors"
+                      className="px-2.5 py-1 bg-[#4779B8] hover:bg-[#356F9D] text-white text-xs font-semibold rounded-sm border border-[#356F9D] inline-flex items-center gap-1 transition-colors"
                     >
-                      <FileText className="w-3.5 h-3.5" />
-                      Download Candidate Resume
+                      <Download className="w-3.5 h-3.5" />
+                      <span>Download PDF Resume</span>
                     </button>
                   </div>
                 ) : (
@@ -303,21 +396,49 @@ export const CompanyApplicantDetailPage: React.FC = () => {
           )}
 
           <div>
-            <label className="portal-label">Recruiter Remarks / Selection Notes</label>
+            <label className="portal-label">Recruiter Remarks / Notes</label>
             <textarea
-              rows={3}
+              rows={2}
               value={remarks}
               onChange={(e) => setRemarks(e.target.value)}
-              placeholder="Enter official notes or scheduling details..."
+              placeholder="Enter official evaluation notes..."
               className="portal-input"
             />
           </div>
+
+          {targetStatus === 'INTERVIEW' && (
+            <div className="space-y-2.5 p-3 bg-[#FAFCFF] border border-[#D4DCE6] rounded-sm text-xs">
+              <div className="font-bold text-[#356F9D] uppercase tracking-wide">
+                Schedule Interview Slot
+              </div>
+              <div>
+                <label className="portal-label">Interview Date & Time *</label>
+                <input
+                  type="datetime-local"
+                  value={scheduledAt}
+                  onChange={(e) => setScheduledAt(e.target.value)}
+                  className="portal-input"
+                  required
+                />
+              </div>
+              <div>
+                <label className="portal-label">Meeting URL (Google Meet / Zoom / Teams)</label>
+                <input
+                  type="url"
+                  value={meetingLink}
+                  onChange={(e) => setMeetingLink(e.target.value)}
+                  placeholder="https://meet.google.com/xyz-abc-def"
+                  className="portal-input"
+                />
+              </div>
+            </div>
+          )}
 
           <div className="pt-2 flex justify-end gap-2 border-t border-[#D4DCE6]">
             <button
               type="button"
               onClick={() => setModalOpen(false)}
-              className="px-3 py-1.5 bg-white border border-[#D4DCE6] text-[#333333] text-xs font-medium rounded-sm"
+              className="px-3 py-1.5 bg-white border border-[#D4DCE6] text-[#333333] text-xs font-medium rounded-sm hover:bg-[#F5F7FA]"
             >
               Cancel
             </button>

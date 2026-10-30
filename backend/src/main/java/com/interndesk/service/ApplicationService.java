@@ -27,6 +27,7 @@ public class ApplicationService {
     private final CompanyRepository companyRepository;
     private final NotificationService notificationService;
     private final UserRepository userRepository;
+    private final StudentSkillRepository studentSkillRepository;
 
     @Transactional
     public ApplicationDto.ApplicationResponse apply(Long internshipId, ApplicationDto.ApplyRequest req, Long userId) {
@@ -241,6 +242,17 @@ public class ApplicationService {
         r.setStudentCollege(a.getStudent().getCollegeName());
         r.setStudentDegree(a.getStudent().getDegree());
         r.setStudentDepartment(a.getStudent().getDepartment());
+        r.setStudentRegistrationNumber(a.getStudent().getRegistrationNumber());
+        r.setStudentCurrentSemester(a.getStudent().getCurrentSemester());
+        r.setStudentCgpa(a.getStudent().getCgpa());
+        try {
+            if (studentSkillRepository != null && a.getStudent() != null) {
+                List<StudentSkill> skills = studentSkillRepository.findByStudentId(a.getStudent().getId());
+                if (skills != null && !skills.isEmpty()) {
+                    r.setStudentSkills(skills.stream().map(StudentSkill::getSkillName).collect(Collectors.joining(", ")));
+                }
+            }
+        } catch (Exception ignored) {}
         r.setStatus(a.getStatus().name());
         r.setCoverLetter(a.getCoverLetter());
         if (a.getResume() != null) {

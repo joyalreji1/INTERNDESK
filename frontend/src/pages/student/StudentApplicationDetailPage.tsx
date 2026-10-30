@@ -13,12 +13,14 @@ import {
   CheckCircle2,
   AlertCircle,
   History,
+  Video,
 } from 'lucide-react';
 
 export const StudentApplicationDetailPage: React.FC = () => {
   const { id } = useParams<{ id: string }>();
   const [app, setApp] = useState<Application | null>(null);
   const [history, setHistory] = useState<ApplicationStatusHistory[]>([]);
+  const [interviews, setInterviews] = useState<any[]>([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
 
@@ -26,12 +28,14 @@ export const StudentApplicationDetailPage: React.FC = () => {
     const fetchDetails = async () => {
       try {
         if (!id) return;
-        const [appData, historyData] = await Promise.all([
+        const [appData, historyData, interviewData] = await Promise.all([
           api.getApplication(Number(id)),
           api.getApplicationHistory(Number(id)),
+          api.getInterviews(Number(id)).catch(() => []),
         ]);
         setApp(appData);
         setHistory(Array.isArray(historyData) ? historyData : []);
+        setInterviews(Array.isArray(interviewData) ? interviewData : []);
       } catch (err: any) {
         setError(err.message || 'Failed to load application details');
       } finally {
@@ -145,6 +149,49 @@ export const StudentApplicationDetailPage: React.FC = () => {
         )}
       </div>
 
+      {/* Scheduled Interview Card (if any) */}
+      {interviews.length > 0 && (
+        <div className="bg-white border border-[#356F9D] rounded-sm shadow-sm overflow-hidden">
+          <div className="bg-[#356F9D] text-white px-4 py-2 text-xs font-bold uppercase flex items-center gap-1.5">
+            <Video className="w-4 h-4 text-[#FFF0CE]" />
+            <span>Scheduled Interview Session</span>
+          </div>
+          <div className="p-4 space-y-3">
+            {interviews.map((iv) => (
+              <div key={iv.id} className="p-3 bg-[#EAF2FC] border border-[#B8C6D6] rounded-sm space-y-2 text-xs">
+                <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-1 font-semibold text-[#356F9D]">
+                  <span className="uppercase tracking-wide">
+                    {iv.interviewType || 'Online Interview'}
+                  </span>
+                  <span className="font-mono text-[#333333]">
+                    {iv.scheduledAt ? new Date(iv.scheduledAt).toLocaleString() : 'TBD'}
+                  </span>
+                </div>
+                {iv.meetingLink && (
+                  <div className="pt-1">
+                    <span className="font-bold text-[#333333] mr-2">Meeting Link:</span>
+                    <a
+                      href={iv.meetingLink}
+                      target="_blank"
+                      rel="noopener noreferrer"
+                      className="text-[#4779B8] font-bold hover:underline break-all"
+                    >
+                      {iv.meetingLink}
+                    </a>
+                  </div>
+                )}
+                {iv.interviewerNotes && (
+                  <div className="text-[#555555] pt-1">
+                    <span className="font-bold text-[#333333] mr-1">Instructions:</span>
+                    {iv.interviewerNotes}
+                  </div>
+                )}
+              </div>
+            ))}
+          </div>
+        </div>
+      )}
+
       {/* Detailed Application Parameters */}
       <div className="bg-white border border-[#D4DCE6] rounded-sm shadow-sm overflow-hidden">
         <div className="bg-[#EAF2FC] text-[#356F9D] px-4 py-2 text-xs font-bold uppercase border-b border-[#D4DCE6]">
@@ -162,7 +209,7 @@ export const StudentApplicationDetailPage: React.FC = () => {
               <td className="font-bold bg-[#FAFCFF]">College / Institute</td>
               <td>{app.studentCollege || 'Engineering College'}</td>
               <td className="font-bold bg-[#FAFCFF]">Degree & Department</td>
-              <td>{app.studentDegree || 'B.Tech'} (CSE)</td>
+              <td>{app.studentDegree || 'B.Tech'} ({app.studentDepartment || 'CSE'})</td>
             </tr>
             <tr>
               <td className="font-bold bg-[#FAFCFF]">Attached PDF Resume</td>

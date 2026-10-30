@@ -39,6 +39,10 @@ public class ApplicationDto {
         private String studentCollege;
         private String studentDegree;
         private String studentDepartment;
+        private String studentRegistrationNumber;
+        private Integer studentCurrentSemester;
+        private java.math.BigDecimal studentCgpa;
+        private String studentSkills;
         private String status;
         private String coverLetter;
         private Long resumeId;

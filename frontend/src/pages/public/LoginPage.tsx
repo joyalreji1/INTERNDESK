@@ -1,11 +1,12 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { Link, useNavigate, useLocation } from 'react-router-dom';
-import { useAuth } from '@/context/AuthContext';
+import { useAuth, normalizeRole } from '@/context/AuthContext';
 import { Logo } from '@/components/common/Logo';
 import { AlertCircle, Eye, EyeOff } from 'lucide-react';
+import { UserRole } from '@/types';
 
 export const LoginPage: React.FC = () => {
-  const { login } = useAuth();
+  const { login, user, isAuthenticated } = useAuth();
   const navigate = useNavigate();
   const location = useLocation();
 
@@ -17,10 +18,47 @@ export const LoginPage: React.FC = () => {
 
   const from = (location.state as any)?.from?.pathname;
 
+  // Helper: check if a target path is appropriate for the given role
+  const isPathAllowedForRole = (path: string, role: UserRole): boolean => {
+    if (role === 'STUDENT') {
+      return path.startsWith('/student') || path.startsWith('/internships');
+    }
+    if (role === 'COMPANY') {
+      return path.startsWith('/company');
+    }
+    if (role === 'ADMIN') {
+      return path.startsWith('/admin');
+    }
+    return false;
+  };
+
+  // Helper: get destination dashboard for role
+  const getDestinationForRole = (role: UserRole): string => {
+    switch (role) {
+      case 'STUDENT':
+        return '/student/dashboard';
+      case 'COMPANY':
+        return '/company/dashboard';
+      case 'ADMIN':
+        return '/admin/dashboard';
+      default:
+        return '/';
+    }
+  };
+
+  // If already authenticated, redirect immediately to their dashboard
+  useEffect(() => {
+    if (isAuthenticated && user) {
+      const currentRole = normalizeRole(user.role);
+      navigate(getDestinationForRole(currentRole), { replace: true });
+    }
+  }, [isAuthenticated, user, navigate]);
+
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     const cleanEmail = email.trim();
     const cleanPassword = password.trim();
+
     if (!cleanEmail || !cleanPassword) {
       setError('Please provide both Email Address / Username and Password.');
       return;
@@ -31,13 +69,13 @@ export const LoginPage: React.FC = () => {
 
     try {
       const loggedInUser = await login(cleanEmail, cleanPassword);
-      if (from) {
+      const userRole = normalizeRole(loggedInUser.role);
+
+      // Verify if 'from' is valid and permitted for this specific role
+      if (from && isPathAllowedForRole(from, userRole)) {
         navigate(from, { replace: true });
       } else {
-        if (loggedInUser.role === 'STUDENT') navigate('/student/dashboard', { replace: true });
-        else if (loggedInUser.role === 'COMPANY') navigate('/company/dashboard', { replace: true });
-        else if (loggedInUser.role === 'ADMIN') navigate('/admin/dashboard', { replace: true });
-        else navigate('/', { replace: true });
+        navigate(getDestinationForRole(userRole), { replace: true });
       }
     } catch (err: any) {
       setError(err.message || 'Invalid email/username or password. Please verify your credentials.');
@@ -60,7 +98,7 @@ export const LoginPage: React.FC = () => {
           <div className="bg-[#356F9D] text-white px-5 py-3 border-b border-[#28587E]">
             <h2 className="text-sm font-bold tracking-wide uppercase">User Sign In</h2>
             <p className="text-xs text-[#EAF2FC] mt-0.5">
-              Enter your registered email/username and password to log in
+              Enter your registered email/username and password to access your portal
             </p>
           </div>
 
@@ -73,7 +111,7 @@ export const LoginPage: React.FC = () => {
             )}
 
             <form onSubmit={handleSubmit} className="space-y-4" autoComplete="off">
-              {/* Dummy hidden inputs prevent Edge/Chrome from automatically injecting cached localhost credentials */}
+              {/* Dummy hidden inputs prevent Edge/Chrome from automatically injecting cached credentials */}
               <input type="text" name="fake_user_name" style={{ display: 'none' }} tabIndex={-1} aria-hidden="true" />
               <input type="password" name="fake_user_pass" style={{ display: 'none' }} tabIndex={-1} aria-hidden="true" />
 
@@ -90,7 +128,7 @@ export const LoginPage: React.FC = () => {
                     value={email}
                     onChange={(e) => setEmail(e.target.value)}
                     required
-                    placeholder="e.g. admin, student, or registered email"
+                    placeholder="e.g. arjun.sharma@student.edu, hr@technova.io, or admin@interndesk.com"
                     className="w-full px-3 py-2 text-sm text-[#333333] bg-white border border-[#D4DCE6] rounded-sm focus:border-[#4779B8] focus:outline-none focus:ring-1 focus:ring-[#4779B8]"
                   />
                 </div>

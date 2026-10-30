@@ -123,7 +123,11 @@ export interface Application {
   studentPhone?: string;
   studentCollege?: string;
   studentDegree?: string;
+  studentDepartment?: string;
+  studentRegistrationNumber?: string;
+  studentCurrentSemester?: number;
   studentCgpa?: number;
+  studentSkills?: string;
   resumeId?: number;
   resumeFilename?: string;
   coverLetter?: string;

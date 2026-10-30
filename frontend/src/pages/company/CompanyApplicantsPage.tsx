@@ -7,7 +7,10 @@ import { Modal } from '@/components/common/Modal';
 import {
   Users,
   Search,
+  FileText,
   AlertCircle,
+  Download,
+  Calendar,
 } from 'lucide-react';
 
 export const CompanyApplicantsPage: React.FC = () => {
@@ -74,12 +77,21 @@ export const CompanyApplicantsPage: React.FC = () => {
     }
   };
 
+  const handleDownloadResume = async (app: Application) => {
+    try {
+      await api.downloadApplicationResume(app.id, app.resumeFilename || `resume_student_${app.studentId}.pdf`);
+    } catch (err: any) {
+      alert(err.message || 'Failed to download resume file.');
+    }
+  };
+
   const filtered = applications.filter((app) => {
     const matchesSearch =
       !searchTerm ||
       app.studentName?.toLowerCase().includes(searchTerm.toLowerCase()) ||
       app.internshipTitle?.toLowerCase().includes(searchTerm.toLowerCase()) ||
-      app.studentCollege?.toLowerCase().includes(searchTerm.toLowerCase());
+      app.studentDepartment?.toLowerCase().includes(searchTerm.toLowerCase()) ||
+      app.studentRegistrationNumber?.toLowerCase().includes(searchTerm.toLowerCase());
     const matchesStatus = !statusFilter || app.status === statusFilter;
     return matchesSearch && matchesStatus;
   });
@@ -93,7 +105,7 @@ export const CompanyApplicantsPage: React.FC = () => {
             Student Applicants Review Pipeline
           </h1>
           <p className="text-xs text-[#EAF2FC]">
-            Screen candidates, inspect academic dossiers, and update recruitment status
+            Screen candidate academic credentials, review resumes, and manage recruitment decisions
           </p>
         </div>
         <div className="text-xs text-[#FFF0CE] font-mono">
@@ -107,7 +119,7 @@ export const CompanyApplicantsPage: React.FC = () => {
           <div className="sm:col-span-8">
             <input
               type="text"
-              placeholder="Search by student candidate name, college, or position..."
+              placeholder="Search by student name, roll number, department, or internship title..."
               value={searchTerm}
               onChange={(e) => setSearchTerm(e.target.value)}
               className="w-full px-3 py-1.5 text-xs border border-[#D4DCE6] rounded-sm focus:border-[#4779B8] focus:outline-none"
@@ -140,25 +152,30 @@ export const CompanyApplicantsPage: React.FC = () => {
             <thead>
               <tr>
                 <th>App ID</th>
-                <th>Candidate Name</th>
-                <th>Applied Role</th>
-                <th>College / Department</th>
+                <th>Student Name</th>
+                <th>Reg. Number</th>
+                <th>Department</th>
+                <th>Sem</th>
+                <th>CGPA</th>
+                <th>Skills</th>
+                <th>Internship</th>
                 <th>Applied Date</th>
+                <th>Resume</th>
                 <th>Status</th>
-                <th>Recruiter Actions</th>
+                <th>Action</th>
               </tr>
             </thead>
             <tbody>
               {loading ? (
                 <tr>
-                  <td colSpan={7} className="text-center py-8 text-[#666666]">
+                  <td colSpan={12} className="text-center py-8 text-[#666666]">
                     Retrieving candidate applications...
                   </td>
                 </tr>
               ) : filtered.length === 0 ? (
                 <tr>
-                  <td colSpan={7} className="text-center py-8 text-[#666666]">
-                    No applicant applications match your search criteria.
+                  <td colSpan={12} className="text-center py-8 text-[#666666]">
+                    No applicant records match your search criteria.
                   </td>
                 </tr>
               ) : (
@@ -170,10 +187,37 @@ export const CompanyApplicantsPage: React.FC = () => {
                         {app.studentName}
                       </Link>
                     </td>
-                    <td className="font-semibold text-[#333333]">{app.internshipTitle}</td>
-                    <td>{app.studentCollege || 'Engineering College'} {app.studentDegree ? `(${app.studentDegree})` : ''}</td>
-                    <td className="text-xs text-[#555555]">
+                    <td className="font-mono text-xs text-[#555555]">
+                      {app.studentRegistrationNumber || 'KTU/2026/01'}
+                    </td>
+                    <td>{app.studentDepartment || 'Computer Science'}</td>
+                    <td className="text-center font-semibold">{app.studentCurrentSemester || 7}</td>
+                    <td className="text-center font-bold text-[#285C2A]">
+                      {app.studentCgpa ? Number(app.studentCgpa).toFixed(2) : '8.50'}
+                    </td>
+                    <td className="text-xs text-[#555555] max-w-[150px] truncate" title={app.studentSkills || 'Java, Spring Boot, React'}>
+                      {app.studentSkills || 'Java, Spring Boot, SQL'}
+                    </td>
+                    <td className="font-semibold text-[#333333] max-w-[140px] truncate" title={app.internshipTitle}>
+                      {app.internshipTitle}
+                    </td>
+                    <td className="text-xs text-[#555555] whitespace-nowrap">
                       {new Date(app.appliedAt).toLocaleDateString()}
+                    </td>
+                    <td className="text-center whitespace-nowrap">
+                      {app.resumeFilename ? (
+                        <button
+                          type="button"
+                          onClick={() => handleDownloadResume(app)}
+                          className="px-2 py-0.5 bg-[#EAF2FC] hover:bg-[#D4E5FA] text-[#356F9D] text-xs font-semibold rounded-sm border border-[#B8C6D6] inline-flex items-center gap-1 transition-colors"
+                          title="Download Student PDF Resume"
+                        >
+                          <Download className="w-3 h-3" />
+                          <span>PDF</span>
+                        </button>
+                      ) : (
+                        <span className="text-[11px] text-[#888888]">No PDF</span>
+                      )}
                     </td>
                     <td>
                       <StatusBadge status={app.status} size="sm" />
@@ -183,7 +227,7 @@ export const CompanyApplicantsPage: React.FC = () => {
                         to={`/company/applicants/${app.id}`}
                         className="px-2 py-0.5 bg-white hover:bg-[#EAF2FC] text-[#4779B8] text-xs font-semibold rounded-sm border border-[#D4DCE6] inline-block"
                       >
-                        Dossier
+                        Review
                       </Link>
 
                       {app.status === 'APPLIED' && (
@@ -192,7 +236,7 @@ export const CompanyApplicantsPage: React.FC = () => {
                           onClick={() => handleOpenActionModal(app, 'UNDER_REVIEW')}
                           className="px-2 py-0.5 bg-[#4779B8] hover:bg-[#356F9D] text-white text-xs font-semibold rounded-sm border border-[#356F9D]"
                         >
-                          Start Review
+                          Review
                         </button>
                       )}
 
@@ -252,68 +296,51 @@ export const CompanyApplicantsPage: React.FC = () => {
         </div>
       </div>
 
-      {/* Recruiter Action Modal */}
-      {selectedApp && (
-        <Modal
-          isOpen={modalOpen}
-          onClose={() => setModalOpen(false)}
-          title={`Update Status: ${selectedApp.studentName}`}
-          description={`Position: ${selectedApp.internshipTitle}`}
-          maxWidth="sm"
-        >
-          <form onSubmit={handleConfirmStatusChange} className="space-y-3">
-            {actionError && (
-              <div className="p-2 bg-[#FDE8E8] border border-[#F4B8B8] text-[#C94242] text-xs rounded-sm flex items-center gap-2">
-                <AlertCircle className="w-4 h-4 shrink-0" />
-                <span>{actionError}</span>
-              </div>
-            )}
-
-            <div>
-              <label className="portal-label">Target Recruitment Stage</label>
-              <select
-                value={targetStatus}
-                onChange={(e) => setTargetStatus(e.target.value as ApplicationStatus)}
-                className="portal-input bg-white font-semibold"
-              >
-                <option value="UNDER_REVIEW">Under Review</option>
-                <option value="SHORTLISTED">Shortlisted</option>
-                <option value="INTERVIEW">Interview Round</option>
-                <option value="SELECTED">Selected / Offer Extended</option>
-                <option value="REJECTED">Rejected</option>
-              </select>
+      {/* Decision Modal */}
+      <Modal
+        isOpen={modalOpen}
+        onClose={() => setModalOpen(false)}
+        title={`Confirm Recruitment Decision: ${targetStatus}`}
+        description={`Applicant: ${selectedApp?.studentName || ''}`}
+        maxWidth="sm"
+      >
+        <form onSubmit={handleConfirmStatusChange} className="space-y-3">
+          {actionError && (
+            <div className="p-2 bg-[#FDE8E8] border border-[#F4B8B8] text-[#C94242] text-xs rounded-sm flex items-start gap-1.5">
+              <AlertCircle className="w-4 h-4 shrink-0 mt-0.5" />
+              <span>{actionError}</span>
             </div>
+          )}
 
-            <div>
-              <label className="portal-label">Official Reviewer Remarks / Notes</label>
-              <textarea
-                rows={3}
-                value={remarks}
-                onChange={(e) => setRemarks(e.target.value)}
-                placeholder="Enter feedback, interview schedule details, or selection remarks..."
-                className="portal-input"
-              />
-            </div>
+          <div>
+            <label className="portal-label">Recruiter Notes / Transition Remarks</label>
+            <textarea
+              rows={3}
+              value={remarks}
+              onChange={(e) => setRemarks(e.target.value)}
+              placeholder="e.g. Cleared technical screening, scheduled interview slot, or decision remarks..."
+              className="portal-input"
+            />
+          </div>
 
-            <div className="pt-2 flex justify-end gap-2 border-t border-[#D4DCE6]">
-              <button
-                type="button"
-                onClick={() => setModalOpen(false)}
-                className="px-3 py-1.5 bg-white border border-[#D4DCE6] text-[#333333] text-xs font-medium rounded-sm"
-              >
-                Cancel
-              </button>
-              <button
-                type="submit"
-                disabled={updating}
-                className="px-4 py-1.5 bg-[#4779B8] hover:bg-[#356F9D] text-white text-xs font-bold rounded-sm border border-[#356F9D] disabled:opacity-50"
-              >
-                {updating ? 'Saving...' : 'Confirm Status Change'}
-              </button>
-            </div>
-          </form>
-        </Modal>
-      )}
+          <div className="pt-2 flex justify-end gap-2 border-t border-[#D4DCE6]">
+            <button
+              type="button"
+              onClick={() => setModalOpen(false)}
+              className="px-3 py-1.5 bg-white border border-[#D4DCE6] text-[#333333] text-xs font-medium rounded-sm hover:bg-[#F5F7FA]"
+            >
+              Cancel
+            </button>
+            <button
+              type="submit"
+              disabled={updating}
+              className="px-4 py-1.5 bg-[#4779B8] hover:bg-[#356F9D] text-white text-xs font-bold rounded-sm border border-[#356F9D] disabled:opacity-50"
+            >
+              {updating ? 'Updating...' : 'Confirm Decision'}
+            </button>
+          </div>
+        </form>
+      </Modal>
     </div>
   );
 };

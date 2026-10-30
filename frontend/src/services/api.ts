@@ -160,6 +160,12 @@ export const api = {
   updateApplicationStatus: (id: number, payload: { newStatus: string; remarks?: string }) =>
     request<any>(`/applications/${id}/status`, { method: 'PATCH', body: JSON.stringify(payload) }),
 
+  scheduleInterview: (applicationId: number, payload: any) =>
+    request<any>(`/applications/${applicationId}/interviews`, { method: 'POST', body: JSON.stringify(payload) }),
+
+  getInterviews: (applicationId: number) =>
+    request<any[]>(`/applications/${applicationId}/interviews`),
+
   // Company Postings
   getCompanyProfile: () =>
     request<any>('/companies/me'),
