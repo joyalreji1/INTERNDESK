@@ -22,8 +22,13 @@ public interface ApplicationRepository extends JpaRepository<Application, Long> 
 
        Page<Application> findByStudentId(Long studentId, Pageable pageable);
 
+       Page<Application> findByStudentIdAndStatus(Long studentId, Application.ApplicationStatus status, Pageable pageable);
+
        @Query("SELECT a FROM Application a JOIN a.internship i JOIN i.company c WHERE c.id = :companyId")
        Page<Application> findByCompanyId(@Param("companyId") Long companyId, Pageable pageable);
+
+       @Query("SELECT a FROM Application a JOIN a.internship i JOIN i.company c WHERE c.id = :companyId AND a.status = :status")
+       Page<Application> findByCompanyIdAndStatus(@Param("companyId") Long companyId, @Param("status") Application.ApplicationStatus status, Pageable pageable);
 
        @Query("SELECT a FROM Application a JOIN a.internship i JOIN i.company c " +
                      "WHERE c.id = :companyId AND a.internship.id = :internshipId")
@@ -41,6 +46,10 @@ public interface ApplicationRepository extends JpaRepository<Application, Long> 
                      "WHERE c.id = :companyId AND a.status = :status")
        long countByCompanyIdAndStatus(@Param("companyId") Long companyId,
                      @Param("status") Application.ApplicationStatus status);
+
+       @Query("SELECT COUNT(a) FROM Application a JOIN a.internship i JOIN i.company c WHERE c.id = :companyId AND a.paymentStatus = :paymentStatus")
+       long countByCompanyIdAndPaymentStatus(@Param("companyId") Long companyId,
+                     @Param("paymentStatus") Application.PaymentStatus paymentStatus);
 
        long countByStatus(Application.ApplicationStatus status);
 

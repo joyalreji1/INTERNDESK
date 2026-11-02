@@ -47,7 +47,24 @@ public class Internship {
     @Enumerated(EnumType.STRING)
     @Column(name = "internship_type", nullable = false)
     @Builder.Default
-    private InternshipType internshipType = InternshipType.FULL_TIME;
+    private InternshipType internshipType = InternshipType.FREE;
+
+    @Column(name = "internship_fee", precision = 10, scale = 2)
+    @Builder.Default
+    private BigDecimal internshipFee = BigDecimal.ZERO;
+
+    @Column(name = "currency", length = 10)
+    @Builder.Default
+    private String currency = "INR";
+
+    @Column(name = "refund_policy", columnDefinition = "TEXT")
+    private String refundPolicy;
+
+    @Column(name = "payment_deadline")
+    private LocalDate paymentDeadline;
+
+    @OneToOne(mappedBy = "internship", cascade = CascadeType.ALL, fetch = FetchType.LAZY, orphanRemoval = true)
+    private InternshipEligibility eligibility;
 
     @Enumerated(EnumType.STRING)
     @Column(name = "work_mode", nullable = false)
@@ -117,7 +134,7 @@ public class Internship {
     private LocalDateTime updatedAt;
 
     public enum InternshipType {
-        FULL_TIME, PART_TIME, REMOTE, HYBRID
+        FREE, PAID, FULL_TIME, PART_TIME, REMOTE, HYBRID
     }
 
     public enum WorkMode {

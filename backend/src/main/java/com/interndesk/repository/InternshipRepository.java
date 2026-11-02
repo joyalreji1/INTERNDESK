@@ -32,6 +32,7 @@ public interface InternshipRepository extends JpaRepository<Internship, Long> {
         AND (:minStipend IS NULL OR i.stipendMin >= :minStipend)
         AND (:maxStipend IS NULL OR i.stipendMax <= :maxStipend)
         AND (:isPaid IS NULL OR i.isPaid = :isPaid)
+        AND (:internshipType IS NULL OR i.internshipType = :internshipType)
         AND (:deadlineAfter IS NULL OR i.applicationDeadline >= :deadlineAfter)
         """)
     Page<Internship> searchInternships(
@@ -42,6 +43,7 @@ public interface InternshipRepository extends JpaRepository<Internship, Long> {
         @Param("minStipend") BigDecimal minStipend,
         @Param("maxStipend") BigDecimal maxStipend,
         @Param("isPaid") Boolean isPaid,
+        @Param("internshipType") Internship.InternshipType internshipType,
         @Param("deadlineAfter") LocalDate deadlineAfter,
         Pageable pageable
     );
@@ -55,6 +57,10 @@ public interface InternshipRepository extends JpaRepository<Internship, Long> {
     long countByCompanyId(Long companyId);
 
     long countByCompanyIdAndStatus(Long companyId, Internship.InternshipStatus status);
+
+    long countByCompanyIdAndInternshipType(Long companyId, Internship.InternshipType internshipType);
+
+    long countByInternshipType(Internship.InternshipType internshipType);
 
     @Query("SELECT i.category, COUNT(i) FROM Internship i WHERE i.status = 'ACTIVE' GROUP BY i.category")
     List<Object[]> countByCategory();

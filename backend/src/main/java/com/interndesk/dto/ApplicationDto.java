@@ -23,6 +23,9 @@ public class ApplicationDto {
 
         @Size(max = 1000)
         private String remarks;
+
+        @Size(max = 2000)
+        private String rejectionReason;
     }
 
     @Data
@@ -30,6 +33,9 @@ public class ApplicationDto {
         private Long id;
         private Long internshipId;
         private String internshipTitle;
+        private String internshipType;
+        private java.math.BigDecimal internshipFee;
+        private String currency;
         private Long companyId;
         private String companyName;
         private String companyLogo;
@@ -44,6 +50,11 @@ public class ApplicationDto {
         private java.math.BigDecimal studentCgpa;
         private String studentSkills;
         private String status;
+        private String eligibilityStatus;
+        private LocalDateTime selectedAt;
+        private String paymentStatus;
+        private LocalDateTime enrolledAt;
+        private String rejectionReason;
         private String coverLetter;
         private Long resumeId;
         private String resumeFilename;
@@ -56,6 +67,10 @@ public class ApplicationDto {
     public static class ApplicationSummary {
         private Long id;
         private String status;
+        private String eligibilityStatus;
+        private String paymentStatus;
+        private String internshipType;
+        private java.math.BigDecimal internshipFee;
         private LocalDateTime appliedAt;
         private Long internshipId;
         private String internshipTitle;

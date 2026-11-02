@@ -47,7 +47,11 @@ async function request<T>(endpoint: string, options: RequestInit = {}): Promise<
   const contentType = response.headers.get('content-type') || '';
   if (contentType.includes('application/json')) {
     data = await response.json();
-  } else if (contentType.includes('text/csv') || contentType.includes('application/pdf') || contentType.includes('application/octet-stream')) {
+  } else if (
+    contentType.includes('text/csv') ||
+    contentType.includes('application/pdf') ||
+    contentType.includes('application/octet-stream')
+  ) {
     data = await response.blob();
     return data as unknown as T;
   } else {
@@ -81,8 +85,7 @@ export const api = {
   registerCompany: (payload: any) =>
     request<any>('/auth/register/company', { method: 'POST', body: JSON.stringify(payload) }),
 
-  getMe: () =>
-    request<any>('/auth/me'),
+  getMe: () => request<any>('/auth/me'),
 
   // Public Internships
   getInternships: (params?: Record<string, string | number | boolean | undefined>) => {
@@ -98,8 +101,10 @@ export const api = {
     return request<any>(`/internships${qStr ? `?${qStr}` : ''}`);
   },
 
-  getInternship: (id: number) =>
-    request<any>(`/internships/${id}`),
+  getInternship: (id: number) => request<any>(`/internships/${id}`),
+
+  evaluateEligibility: (internshipId: number) =>
+    request<any>(`/internships/${internshipId}/eligibility`),
 
   // Public Companies
   getCompanies: (params?: Record<string, string | number | undefined>) => {
@@ -113,18 +118,15 @@ export const api = {
     return request<any>(`/companies${qStr ? `?${qStr}` : ''}`);
   },
 
-  getCompany: (id: number) =>
-    request<any>(`/companies/${id}`),
+  getCompany: (id: number) => request<any>(`/companies/${id}`),
 
   // Student Profile & Resumes
-  getStudentProfile: () =>
-    request<any>('/students/me'),
+  getStudentProfile: () => request<any>('/students/me'),
 
   updateStudentProfile: (payload: any) =>
     request<any>('/students/me', { method: 'PUT', body: JSON.stringify(payload) }),
 
-  getResumes: () =>
-    request<any[]>('/students/me/resumes'),
+  getResumes: () => request<any[]>('/students/me/resumes'),
 
   uploadResume: (file: File) => {
     const fd = new FormData();
@@ -140,7 +142,10 @@ export const api = {
 
   // Applications
   applyForInternship: (internshipId: number, payload: { coverLetter?: string; resumeId?: number }) =>
-    request<any>(`/internships/${internshipId}/applications`, { method: 'POST', body: JSON.stringify(payload) }),
+    request<any>(`/internships/${internshipId}/applications`, {
+      method: 'POST',
+      body: JSON.stringify(payload),
+    }),
 
   getMyApplications: (page = 0, size = 10) =>
     request<any>(`/applications/me?page=${page}&size=${size}`),
@@ -151,24 +156,27 @@ export const api = {
     return request<any>(`/companies/me/applications?${q.toString()}`);
   },
 
-  getApplication: (id: number) =>
-    request<any>(`/applications/${id}`),
+  getApplication: (id: number) => request<any>(`/applications/${id}`),
 
   getApplicationHistory: (id: number) =>
     request<any[]>(`/applications/${id}/history`),
 
-  updateApplicationStatus: (id: number, payload: { newStatus: string; remarks?: string }) =>
-    request<any>(`/applications/${id}/status`, { method: 'PATCH', body: JSON.stringify(payload) }),
+  updateApplicationStatus: (
+    id: number,
+    payload: { newStatus: string; remarks?: string; rejectionReason?: string }
+  ) => request<any>(`/applications/${id}/status`, { method: 'PATCH', body: JSON.stringify(payload) }),
 
   scheduleInterview: (applicationId: number, payload: any) =>
-    request<any>(`/applications/${applicationId}/interviews`, { method: 'POST', body: JSON.stringify(payload) }),
+    request<any>(`/applications/${applicationId}/interviews`, {
+      method: 'POST',
+      body: JSON.stringify(payload),
+    }),
 
   getInterviews: (applicationId: number) =>
     request<any[]>(`/applications/${applicationId}/interviews`),
 
   // Company Postings
-  getCompanyProfile: () =>
-    request<any>('/companies/me'),
+  getCompanyProfile: () => request<any>('/companies/me'),
 
   updateCompanyProfile: (payload: any) =>
     request<any>('/companies/me', { method: 'PUT', body: JSON.stringify(payload) }),
@@ -186,14 +194,80 @@ export const api = {
     request<void>(`/internships/${id}`, { method: 'DELETE' }),
 
   // Dashboards
-  getStudentDashboard: () =>
-    request<any>('/dashboard/student'),
+  getStudentDashboard: () => request<any>('/dashboard/student'),
 
-  getCompanyDashboard: () =>
-    request<any>('/dashboard/company'),
+  getCompanyDashboard: () => request<any>('/dashboard/company'),
 
-  getAdminDashboard: () =>
-    request<any>('/dashboard/admin'),
+  getAdminDashboard: () => request<any>('/dashboard/admin'),
+
+  // Payments & Refunds
+  createPaymentOrder: (applicationId: number) =>
+    request<any>('/payments/create-order', {
+      method: 'POST',
+      body: JSON.stringify({ applicationId }),
+    }),
+
+  verifyPayment: (payload: {
+    applicationId: number;
+    razorpayOrderId: string;
+    razorpayPaymentId: string;
+    razorpaySignature: string;
+  }) =>
+    request<any>('/payments/verify', {
+      method: 'POST',
+      body: JSON.stringify(payload),
+    }),
+
+  getPaymentReceipt: (paymentId: number) =>
+    request<any>(`/payments/${paymentId}/receipt`),
+
+  getPaymentReceiptByApplication: (applicationId: number) =>
+    request<any>(`/payments/application/${applicationId}/receipt`),
+
+  getStudentPayments: (page = 0, size = 10) =>
+    request<any>(`/payments/student/history?page=${page}&size=${size}`),
+
+  getCompanyPayments: (page = 0, size = 10) =>
+    request<any>(`/payments/company/history?page=${page}&size=${size}`),
+
+  getCompanyPaymentMetrics: () =>
+    request<any>('/payments/company/metrics'),
+
+  requestRefund: (payload: { applicationId: number; reason: string }) =>
+    request<any>('/refunds/request', {
+      method: 'POST',
+      body: JSON.stringify(payload),
+    }),
+
+  getAdminPayments: (page = 0, size = 15) =>
+    request<any>(`/admin/payments?page=${page}&size=${size}`),
+
+  getAdminPaymentSummary: () =>
+    request<any>('/admin/payments/summary'),
+
+  getAdminRefunds: (page = 0, size = 15) =>
+    request<any>(`/admin/payments/refunds?page=${page}&size=${size}`),
+
+  actionAdminRefund: (
+    refundId: number,
+    payload: { action: 'APPROVE' | 'REJECT'; adminNotes?: string }
+  ) =>
+    request<any>(`/admin/payments/refunds/${refundId}/action`, {
+      method: 'POST',
+      body: JSON.stringify(payload),
+    }),
+
+  exportPaymentCsv: async () => {
+    const blob = await request<Blob>('/admin/payments/export');
+    const url = window.URL.createObjectURL(blob);
+    const a = document.createElement('a');
+    a.href = url;
+    a.download = `intern_desk_payments_${new Date().toISOString().slice(0, 10)}.csv`;
+    document.body.appendChild(a);
+    a.click();
+    a.remove();
+    window.URL.revokeObjectURL(url);
+  },
 
   // Notifications
   getNotifications: (page = 0, size = 20) =>
@@ -216,7 +290,10 @@ export const api = {
   },
 
   updateStudentUserStatus: (userId: number, status: string, remarks?: string) =>
-    request<void>(`/admin/students/${userId}/status`, { method: 'PATCH', body: JSON.stringify({ status, remarks }) }),
+    request<void>(`/admin/students/${userId}/status`, {
+      method: 'PATCH',
+      body: JSON.stringify({ status, remarks }),
+    }),
 
   getAdminCompanies: (query?: string, status?: string, page = 0, size = 15) => {
     const q = new URLSearchParams({ page: String(page), size: String(size) });
@@ -226,7 +303,10 @@ export const api = {
   },
 
   verifyCompany: (companyId: number, status: string, remarks?: string) =>
-    request<void>(`/admin/companies/${companyId}/verify`, { method: 'PATCH', body: JSON.stringify({ status, remarks }) }),
+    request<void>(`/admin/companies/${companyId}/verify`, {
+      method: 'PATCH',
+      body: JSON.stringify({ status, remarks }),
+    }),
 
   getAdminInternships: (query?: string, status?: string, page = 0, size = 15) => {
     const q = new URLSearchParams({ page: String(page), size: String(size) });
@@ -236,7 +316,10 @@ export const api = {
   },
 
   updateInternshipStatusAdmin: (id: number, status: string) =>
-    request<void>(`/admin/internships/${id}/status`, { method: 'PATCH', body: JSON.stringify({ status }) }),
+    request<void>(`/admin/internships/${id}/status`, {
+      method: 'PATCH',
+      body: JSON.stringify({ status }),
+    }),
 
   deleteInternshipAdmin: (id: number) =>
     request<void>(`/admin/internships/${id}`, { method: 'DELETE' }),
@@ -250,8 +333,7 @@ export const api = {
   getAdminAuditLogs: (page = 0, size = 20) =>
     request<any>(`/admin/audit-logs?page=${page}&size=${size}`),
 
-  getAdminReportsSummary: () =>
-    request<any>('/admin/reports/summary'),
+  getAdminReportsSummary: () => request<any>('/admin/reports/summary'),
 
   exportCsv: async (type: 'students' | 'companies' | 'internships' | 'applications') => {
     const blob = await request<Blob>(`/admin/reports/export/${type}`);
@@ -265,7 +347,10 @@ export const api = {
     window.URL.revokeObjectURL(url);
   },
 
-  downloadApplicationResume: async (applicationId: number, filename = 'candidate_resume.pdf') => {
+  downloadApplicationResume: async (
+    applicationId: number,
+    filename = 'candidate_resume.pdf'
+  ) => {
     const blob = await request<Blob>(`/applications/${applicationId}/resume`);
     const url = window.URL.createObjectURL(blob);
     const a = document.createElement('a');
@@ -289,4 +374,3 @@ export const api = {
     window.URL.revokeObjectURL(url);
   },
 };
-

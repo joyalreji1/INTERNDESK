@@ -22,6 +22,7 @@ import {
   PlusCircle,
   BarChart3,
   ShieldAlert,
+  CreditCard,
 } from 'lucide-react';
 
 interface PortalLayoutProps {
@@ -57,6 +58,7 @@ export const PortalLayout: React.FC<PortalLayoutProps> = ({ children }) => {
     { to: '/student/dashboard', label: 'Home Dashboard', icon: LayoutDashboard },
     { to: '/student/internships', label: 'Internships', icon: Briefcase },
     { to: '/student/applications', label: 'Applications', icon: FileCheck },
+    { to: '/student/payments', label: 'Fee Payments', icon: CreditCard },
     { to: '/student/profile', label: 'Profile', icon: User },
     { to: '/student/resume', label: 'Resume', icon: FileText },
     { to: '/student/notifications', label: 'Notifications', icon: Bell, badge: unreadCount },
@@ -68,6 +70,7 @@ export const PortalLayout: React.FC<PortalLayoutProps> = ({ children }) => {
     { to: '/company/internships', label: 'Internship Postings', icon: Briefcase },
     { to: '/company/internships/create', label: 'Post New Internship', icon: PlusCircle },
     { to: '/company/applicants', label: 'Applicants Pipeline', icon: Users },
+    { to: '/company/payments', label: 'Candidate Payments', icon: CreditCard },
     { to: '/company/profile', label: 'Company Profile', icon: Building2 },
     { to: '/company/analytics', label: 'Analytics', icon: BarChart3 },
     { to: '/company/settings', label: 'Settings', icon: Settings },
@@ -79,6 +82,7 @@ export const PortalLayout: React.FC<PortalLayoutProps> = ({ children }) => {
     { to: '/admin/companies', label: 'Companies', icon: Building2 },
     { to: '/admin/internships', label: 'Internship Management', icon: Briefcase },
     { to: '/admin/applications', label: 'Applications', icon: FileCheck },
+    { to: '/admin/payments', label: 'Platform Payments', icon: CreditCard },
     { to: '/admin/reports', label: 'Reports', icon: FileSpreadsheet },
     { to: '/admin/audit-logs', label: 'Audit Logs', icon: History },
     { to: '/admin/settings', label: 'Settings', icon: Settings },

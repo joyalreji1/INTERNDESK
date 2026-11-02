@@ -85,13 +85,19 @@ export const AdminDashboard: React.FC = () => {
         <div className="bg-white border border-[#D4DCE6] rounded-sm p-3.5 shadow-sm">
           <div className="text-[11px] font-bold text-[#285C2A] uppercase">Active Internships</div>
           <div className="text-xl font-bold text-[#285C2A] mt-1">{data?.totalInternships || 0}</div>
-          <div className="text-[11px] text-[#888888] mt-0.5">Published Opportunities</div>
+          <div className="text-[11px] text-[#888888] mt-0.5">
+            {data?.freeInternshipCount !== undefined ? `${data.freeInternshipCount} Free · ${data.paidInternshipCount || 0} Paid` : 'Published Opportunities'}
+          </div>
         </div>
 
         <div className="bg-white border border-[#D4DCE6] rounded-sm p-3.5 shadow-sm">
-          <div className="text-[11px] font-bold text-[#855A00] uppercase">Total Applications</div>
-          <div className="text-xl font-bold text-[#855A00] mt-1">{data?.totalApplications || 0}</div>
-          <div className="text-[11px] text-[#888888] mt-0.5">Recorded Across College</div>
+          <div className="text-[11px] font-bold text-[#4B32A6] uppercase">Platform Revenue</div>
+          <div className="text-xl font-bold font-mono text-[#4B32A6] mt-1">
+            ₹{data?.totalPlatformRevenue?.toLocaleString('en-IN', { minimumFractionDigits: 2 }) || '0.00'}
+          </div>
+          <div className="text-[11px] text-[#888888] mt-0.5">
+            {data?.enrolledCount || 0} Paid Enrollments Verified
+          </div>
         </div>
       </div>
 

@@ -44,6 +44,12 @@ public class InternshipDto {
 
         private Boolean isPaid;
 
+        private BigDecimal internshipFee;
+        private String currency;
+        private String refundPolicy;
+        private LocalDate paymentDeadline;
+        private InternshipEligibilityDto.EligibilityRequest eligibility;
+
         @Min(1)
         @Max(500)
         private Integer openings;
@@ -89,6 +95,12 @@ public class InternshipDto {
         private BigDecimal stipendMax;
         private String stipendCurrency;
         private Boolean isPaid;
+        private BigDecimal internshipFee;
+        private String currency;
+        private String refundPolicy;
+        private LocalDate paymentDeadline;
+        private InternshipEligibilityDto.EligibilityResponse eligibility;
+        private InternshipEligibilityDto.EligibilityEvaluationResult userEligibility;
         private Integer openings;
         private LocalDate applicationDeadline;
         private LocalDate startDate;
@@ -116,6 +128,9 @@ public class InternshipDto {
         private BigDecimal stipendMin;
         private BigDecimal stipendMax;
         private Boolean isPaid;
+        private String internshipType;
+        private BigDecimal internshipFee;
+        private String currency;
         private LocalDate applicationDeadline;
         private String status;
         private String category;

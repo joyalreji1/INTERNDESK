@@ -8,6 +8,7 @@ import com.interndesk.exception.InvalidStatusTransitionException;
 import com.interndesk.exception.UnauthorizedException;
 import com.interndesk.repository.*;
 import com.interndesk.service.ApplicationService;
+import com.interndesk.service.EligibilityEvaluationService;
 import com.interndesk.service.NotificationService;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.DisplayName;
@@ -44,6 +45,10 @@ public class ApplicationWorkflowTest {
     private NotificationService notificationService;
     @Mock
     private UserRepository userRepository;
+    @Mock
+    private StudentSkillRepository studentSkillRepository;
+    @Mock
+    private EligibilityEvaluationService eligibilityEvaluationService;
 
     @InjectMocks
     private ApplicationService applicationService;
@@ -77,6 +82,12 @@ public class ApplicationWorkflowTest {
         when(studentProfileRepository.findByUserId(1L)).thenReturn(Optional.of(studentProfile));
         when(internshipRepository.findById(30L)).thenReturn(Optional.of(internship));
         when(applicationRepository.existsByStudentIdAndInternshipId(10L, 30L)).thenReturn(false);
+        when(eligibilityEvaluationService.evaluate(any(), any())).thenReturn(
+            com.interndesk.dto.InternshipEligibilityDto.EligibilityEvaluationResult.builder()
+                .eligible(true)
+                .status("ELIGIBLE")
+                .build()
+        );
 
         Application savedApp = Application.builder()
                 .id(100L)

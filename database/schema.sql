@@ -358,3 +358,78 @@ CREATE TABLE IF NOT EXISTS refresh_tokens (
     INDEX idx_rt_token (token),
     INDEX idx_rt_expires (expires_at)
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
+
+
+-- =====================================================================
+-- Free & Paid Internship Extensions & Eligibility Criteria
+-- =====================================================================
+CREATE TABLE IF NOT EXISTS internship_eligibility (
+    id                             BIGINT AUTO_INCREMENT PRIMARY KEY,
+    internship_id                  BIGINT NOT NULL UNIQUE,
+    minimum_cgpa                   DECIMAL(4,2),
+    minimum_percentage             DECIMAL(5,2),
+    eligible_degrees               VARCHAR(500),
+    eligible_departments           VARCHAR(500),
+    eligible_semesters             VARCHAR(100),
+    minimum_semester               INT,
+    required_skills                VARCHAR(500),
+    required_certifications        VARCHAR(500),
+    resume_required                BOOLEAN NOT NULL DEFAULT TRUE,
+    academic_document_requirements VARCHAR(500),
+    additional_conditions          TEXT,
+    created_at                     DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP,
+    updated_at                     DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
+    CONSTRAINT fk_elig_internship FOREIGN KEY (internship_id) REFERENCES internships(id) ON DELETE CASCADE,
+    INDEX idx_elig_internship (internship_id)
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
+
+-- =====================================================================
+-- Payments (Razorpay & Test Mode Integration)
+-- =====================================================================
+CREATE TABLE IF NOT EXISTS payments (
+    id                    BIGINT AUTO_INCREMENT PRIMARY KEY,
+    application_id        BIGINT NOT NULL,
+    student_id            BIGINT NOT NULL,
+    company_id            BIGINT NOT NULL,
+    internship_id         BIGINT NOT NULL,
+    amount                DECIMAL(10,2) NOT NULL,
+    currency              VARCHAR(10) NOT NULL DEFAULT 'INR',
+    payment_gateway       VARCHAR(50) NOT NULL DEFAULT 'RAZORPAY',
+    gateway_order_id      VARCHAR(100),
+    gateway_payment_id    VARCHAR(100),
+    gateway_signature     VARCHAR(255),
+    transaction_reference VARCHAR(100) NOT NULL UNIQUE,
+    payment_status        VARCHAR(50) NOT NULL DEFAULT 'INITIATED',
+    paid_at               DATETIME,
+    failure_reason        VARCHAR(255),
+    receipt_url           VARCHAR(500),
+    created_at            DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP,
+    updated_at            DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
+    CONSTRAINT fk_pay_application FOREIGN KEY (application_id) REFERENCES applications(id) ON DELETE RESTRICT,
+    CONSTRAINT fk_pay_student     FOREIGN KEY (student_id) REFERENCES student_profiles(id) ON DELETE RESTRICT,
+    CONSTRAINT fk_pay_company     FOREIGN KEY (company_id) REFERENCES companies(id) ON DELETE RESTRICT,
+    CONSTRAINT fk_pay_internship  FOREIGN KEY (internship_id) REFERENCES internships(id) ON DELETE RESTRICT,
+    INDEX idx_pay_app (application_id),
+    INDEX idx_pay_student (student_id),
+    INDEX idx_pay_company (company_id),
+    INDEX idx_pay_order (gateway_order_id),
+    INDEX idx_pay_status (payment_status)
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
+
+-- =====================================================================
+-- Refunds
+-- =====================================================================
+CREATE TABLE IF NOT EXISTS refunds (
+    id                BIGINT AUTO_INCREMENT PRIMARY KEY,
+    payment_id        BIGINT NOT NULL,
+    requested_amount  DECIMAL(10,2) NOT NULL,
+    refund_reason     TEXT,
+    refund_status     VARCHAR(50) NOT NULL DEFAULT 'REQUESTED',
+    gateway_refund_id VARCHAR(100),
+    admin_notes       TEXT,
+    processed_at      DATETIME,
+    created_at        DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP,
+    CONSTRAINT fk_ref_payment FOREIGN KEY (payment_id) REFERENCES payments(id) ON DELETE RESTRICT,
+    INDEX idx_ref_payment (payment_id),
+    INDEX idx_ref_status (refund_status)
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;

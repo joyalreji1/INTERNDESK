@@ -113,10 +113,11 @@ export const AdminInternshipsPage: React.FC = () => {
               <tr>
                 <th>Job ID</th>
                 <th>Internship Title</th>
+                <th>Type</th>
                 <th>Hiring Company</th>
                 <th>Location</th>
                 <th>Work Mode</th>
-                <th>Stipend</th>
+                <th>Stipend / Fee</th>
                 <th>Status</th>
                 <th>Actions</th>
               </tr>
@@ -124,50 +125,66 @@ export const AdminInternshipsPage: React.FC = () => {
             <tbody>
               {loading ? (
                 <tr>
-                  <td colSpan={8} className="text-center py-8 text-[#666666]">
+                  <td colSpan={9} className="text-center py-8 text-[#666666]">
                     Retrieving internship listings...
                   </td>
                 </tr>
               ) : internships.length === 0 ? (
                 <tr>
-                  <td colSpan={8} className="text-center py-8 text-[#666666]">
+                  <td colSpan={9} className="text-center py-8 text-[#666666]">
                     No internship records matched your query.
                   </td>
                 </tr>
               ) : (
-                internships.map((int) => (
-                  <tr key={int.id}>
-                    <td className="font-mono text-xs text-[#666666]">INT-{String(int.id).padStart(4, '0')}</td>
-                    <td className="font-bold text-[#356F9D]">{int.title}</td>
-                    <td className="font-medium text-[#333333]">{int.companyName}</td>
-                    <td>{int.location}</td>
-                    <td>
-                      <StatusBadge status={int.workMode} size="sm" />
-                    </td>
-                    <td className="font-semibold text-[#285C2A]">
-                      {(int.stipendMin || int.stipendAmount) ? `₹${(int.stipendMin ?? int.stipendAmount).toLocaleString()}/mo` : 'Unpaid'}
-                    </td>
-                    <td>
-                      <StatusBadge status={int.status} size="sm" />
-                    </td>
-                    <td className="space-x-1.5 whitespace-nowrap">
-                      <button
-                        type="button"
-                        onClick={() => handleToggleStatus(int.id, int.status)}
-                        className="px-2 py-0.5 bg-white hover:bg-[#EAF2FC] text-[#4779B8] text-xs font-semibold rounded-sm border border-[#D4DCE6]"
-                      >
-                        {int.status === 'ACTIVE' ? 'Close' : 'Activate'}
-                      </button>
-                      <button
-                        type="button"
-                        onClick={() => handleDelete(int.id, int.title)}
-                        className="px-2 py-0.5 bg-white hover:bg-[#FDE8E8] text-[#C94242] text-xs font-semibold rounded-sm border border-[#D4DCE6]"
-                      >
-                        Delete
-                      </button>
-                    </td>
-                  </tr>
-                ))
+                internships.map((int) => {
+                  const isPaid = int.internshipType === 'PAID' || (int.internshipFee && int.internshipFee > 0);
+                  return (
+                    <tr key={int.id}>
+                      <td className="font-mono text-xs text-[#666666]">INT-{String(int.id).padStart(4, '0')}</td>
+                      <td className="font-bold text-[#356F9D]">{int.title}</td>
+                      <td>
+                        {isPaid ? (
+                          <span className="px-2 py-0.5 bg-[#F3F0FA] text-[#4B32A6] border border-[#D2CCEC] font-bold text-[10px] rounded-sm">
+                            PAID · ₹{int.internshipFee}
+                          </span>
+                        ) : (
+                          <span className="px-2 py-0.5 bg-[#EBF7EA] text-[#285C2A] border border-[#BFDDB7] font-bold text-[10px] rounded-sm">
+                            FREE
+                          </span>
+                        )}
+                      </td>
+                      <td className="font-medium text-[#333333]">{int.companyName}</td>
+                      <td>{int.location}</td>
+                      <td>
+                        <StatusBadge status={int.workMode} size="sm" />
+                      </td>
+                      <td className="font-semibold text-[#285C2A]">
+                        {isPaid
+                          ? `Fee: ₹${int.internshipFee}`
+                          : (int.stipendMin || int.stipendAmount) ? `₹${(int.stipendMin ?? int.stipendAmount).toLocaleString()}/mo` : 'Free'}
+                      </td>
+                      <td>
+                        <StatusBadge status={int.status} size="sm" />
+                      </td>
+                      <td className="space-x-1.5 whitespace-nowrap">
+                        <button
+                          type="button"
+                          onClick={() => handleToggleStatus(int.id, int.status)}
+                          className="px-2 py-0.5 bg-white hover:bg-[#EAF2FC] text-[#4779B8] text-xs font-semibold rounded-sm border border-[#D4DCE6]"
+                        >
+                          {int.status === 'ACTIVE' ? 'Close' : 'Activate'}
+                        </button>
+                        <button
+                          type="button"
+                          onClick={() => handleDelete(int.id, int.title)}
+                          className="px-2 py-0.5 bg-white hover:bg-[#FDE8E8] text-[#C94242] text-xs font-semibold rounded-sm border border-[#D4DCE6]"
+                        >
+                          Delete
+                        </button>
+                      </td>
+                    </tr>
+                  );
+                })
               )}
             </tbody>
           </table>

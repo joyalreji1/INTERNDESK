@@ -112,18 +112,23 @@ public class SecurityConfig {
             .authorizeHttpRequests(auth -> auth
                 // Public endpoints
                 .requestMatchers("/api/auth/**").permitAll()
+                .requestMatchers("/api/payments/webhook").permitAll()
                 .requestMatchers(HttpMethod.GET, "/api/internships", "/api/internships/**").permitAll()
                 .requestMatchers(HttpMethod.GET, "/api/companies", "/api/companies/**").permitAll()
                 .requestMatchers("/api-docs/**", "/swagger-ui/**", "/swagger-ui.html").permitAll()
                 // Student-only
                 .requestMatchers("/api/students/**").hasRole("STUDENT")
+                .requestMatchers("/api/payments/create-order", "/api/payments/verify", "/api/payments/student/**").hasRole("STUDENT")
                 // Company-only
                 .requestMatchers("/api/companies/me/**").hasRole("COMPANY")
+                .requestMatchers("/api/payments/company/**").hasRole("COMPANY")
                 // Admin-only
                 .requestMatchers("/api/admin/**").hasRole("ADMIN")
                 // Shared authenticated
                 .requestMatchers("/api/notifications/**").authenticated()
                 .requestMatchers("/api/applications/**").authenticated()
+                .requestMatchers("/api/payments/**").authenticated()
+                .requestMatchers("/api/refunds/**").authenticated()
                 .anyRequest().authenticated()
             );
 

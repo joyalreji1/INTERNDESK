@@ -23,6 +23,7 @@ import { StudentApplicationsPage } from '@/pages/student/StudentApplicationsPage
 import { StudentApplicationDetailPage } from '@/pages/student/StudentApplicationDetailPage';
 import { StudentResumePage } from '@/pages/student/StudentResumePage';
 import { StudentNotificationsPage } from '@/pages/student/StudentNotificationsPage';
+import { StudentPaymentsPage } from '@/pages/student/StudentPaymentsPage';
 import { StudentSettingsPage } from '@/pages/student/StudentSettingsPage';
 
 // Company Portal Pages
@@ -34,6 +35,7 @@ import { EditInternshipPage } from '@/pages/company/EditInternshipPage';
 import { CompanyApplicantsPage } from '@/pages/company/CompanyApplicantsPage';
 import { CompanyApplicantDetailPage } from '@/pages/company/CompanyApplicantDetailPage';
 import { CompanyAnalyticsPage } from '@/pages/company/CompanyAnalyticsPage';
+import { CompanyPaymentsPage } from '@/pages/company/CompanyPaymentsPage';
 import { CompanySettingsPage } from '@/pages/company/CompanySettingsPage';
 
 // Admin Portal Pages
@@ -42,6 +44,7 @@ import { AdminStudentsPage } from '@/pages/admin/AdminStudentsPage';
 import { AdminCompaniesPage } from '@/pages/admin/AdminCompaniesPage';
 import { AdminInternshipsPage } from '@/pages/admin/AdminInternshipsPage';
 import { AdminApplicationsPage } from '@/pages/admin/AdminApplicationsPage';
+import { AdminPaymentsPage } from '@/pages/admin/AdminPaymentsPage';
 import { AdminReportsPage } from '@/pages/admin/AdminReportsPage';
 import { AdminAuditLogsPage } from '@/pages/admin/AdminAuditLogsPage';
 import { AdminSettingsPage } from '@/pages/admin/AdminSettingsPage';
@@ -195,6 +198,16 @@ export const App: React.FC = () => {
         }
       />
       <Route
+        path="/student/payments"
+        element={
+          <ProtectedRoute allowedRoles={['STUDENT']}>
+            <PortalLayout>
+              <StudentPaymentsPage />
+            </PortalLayout>
+          </ProtectedRoute>
+        }
+      />
+      <Route
         path="/student/settings"
         element={
           <ProtectedRoute allowedRoles={['STUDENT']}>
@@ -287,6 +300,16 @@ export const App: React.FC = () => {
         }
       />
       <Route
+        path="/company/payments"
+        element={
+          <ProtectedRoute allowedRoles={['COMPANY']}>
+            <PortalLayout>
+              <CompanyPaymentsPage />
+            </PortalLayout>
+          </ProtectedRoute>
+        }
+      />
+      <Route
         path="/company/settings"
         element={
           <ProtectedRoute allowedRoles={['COMPANY']}>
@@ -344,6 +367,16 @@ export const App: React.FC = () => {
           <ProtectedRoute allowedRoles={['ADMIN']}>
             <PortalLayout>
               <AdminApplicationsPage />
+            </PortalLayout>
+          </ProtectedRoute>
+        }
+      />
+      <Route
+        path="/admin/payments"
+        element={
+          <ProtectedRoute allowedRoles={['ADMIN']}>
+            <PortalLayout>
+              <AdminPaymentsPage />
             </PortalLayout>
           </ProtectedRoute>
         }

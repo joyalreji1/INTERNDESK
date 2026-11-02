@@ -37,12 +37,13 @@ public class InternshipController {
             @RequestParam(required = false) BigDecimal minStipend,
             @RequestParam(required = false) BigDecimal maxStipend,
             @RequestParam(required = false) Boolean isPaid,
+            @RequestParam(required = false) String internshipType,
             @RequestParam(defaultValue = "0") int page,
             @RequestParam(defaultValue = "12") int size,
             @RequestParam(defaultValue = "newest") String sort) {
 
         Page<InternshipDto.InternshipSummary> result = internshipService.searchInternships(
-            query, category, workMode, location, minStipend, maxStipend, isPaid, page, size, sort);
+            query, category, workMode, location, minStipend, maxStipend, isPaid, internshipType, page, size, sort);
 
         return ResponseEntity.ok(ApiResponse.success(result)
             .withPagination(result.getNumber(), result.getSize(),
@@ -51,8 +52,27 @@ public class InternshipController {
 
     @GetMapping("/{id}")
     @Operation(summary = "Get internship details by ID (public)")
-    public ResponseEntity<ApiResponse<InternshipDto.InternshipResponse>> getById(@PathVariable Long id) {
-        return ResponseEntity.ok(ApiResponse.success(internshipService.getById(id)));
+    public ResponseEntity<ApiResponse<InternshipDto.InternshipResponse>> getById(
+            @PathVariable Long id,
+            @AuthenticationPrincipal UserDetails principal) {
+        Long userId = null;
+        if (principal != null) {
+            userId = userRepository.findByEmail(principal.getUsername()).map(User::getId).orElse(null);
+        }
+        return ResponseEntity.ok(ApiResponse.success(internshipService.getById(id, userId)));
+    }
+
+    @GetMapping("/{id}/eligibility")
+    @Operation(summary = "Evaluate student eligibility for an internship")
+    public ResponseEntity<ApiResponse<com.interndesk.dto.InternshipEligibilityDto.EligibilityEvaluationResult>> evaluateEligibility(
+            @PathVariable Long id,
+            @AuthenticationPrincipal UserDetails principal) {
+        if (principal == null) {
+            return ResponseEntity.status(HttpStatus.UNAUTHORIZED)
+                .body(ApiResponse.error("Please login to evaluate eligibility."));
+        }
+        User user = userRepository.findByEmail(principal.getUsername()).orElseThrow();
+        return ResponseEntity.ok(ApiResponse.success(internshipService.evaluateStudentEligibility(id, user.getId())));
     }
 
     @PostMapping

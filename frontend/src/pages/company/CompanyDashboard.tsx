@@ -112,25 +112,29 @@ export const CompanyDashboard: React.FC = () => {
         <div className="bg-white border border-[#D4DCE6] rounded-sm p-3.5 shadow-sm">
           <div className="text-[11px] font-bold text-[#666666] uppercase">Total Postings</div>
           <div className="text-xl font-bold text-[#356F9D] mt-1">{data?.myInternships?.length || 0}</div>
-          <div className="text-[11px] text-[#888888] mt-0.5">Published Roles</div>
+          <div className="text-[11px] text-[#888888] mt-0.5">
+            {data?.freeInternshipCount !== undefined ? `${data.freeInternshipCount} Free · ${data.paidInternshipCount || 0} Paid` : 'Published Roles'}
+          </div>
         </div>
 
         <div className="bg-white border border-[#D4DCE6] rounded-sm p-3.5 shadow-sm">
-          <div className="text-[11px] font-bold text-[#285C2A] uppercase">Active Internships</div>
-          <div className="text-xl font-bold text-[#285C2A] mt-1">{data?.totalActiveInternships || 0}</div>
-          <div className="text-[11px] text-[#888888] mt-0.5">Accepting Applications</div>
+          <div className="text-[11px] font-bold text-[#285C2A] uppercase">Enrolled Candidates</div>
+          <div className="text-xl font-bold text-[#285C2A] mt-1">{data?.enrolledCount || 0}</div>
+          <div className="text-[11px] text-[#888888] mt-0.5">Seats Confirmed & Verified</div>
         </div>
 
         <div className="bg-white border border-[#D4DCE6] rounded-sm p-3.5 shadow-sm">
-          <div className="text-[11px] font-bold text-[#333333] uppercase">Total Applicants</div>
-          <div className="text-xl font-bold text-[#333333] mt-1">{data?.totalApplicants || 0}</div>
-          <div className="text-[11px] text-[#888888] mt-0.5">Candidate Submissions</div>
+          <div className="text-[11px] font-bold text-[#855A00] uppercase">Payment Pending</div>
+          <div className="text-xl font-bold text-[#855A00] mt-1">{data?.paymentPendingCount || 0}</div>
+          <div className="text-[11px] text-[#888888] mt-0.5">Selected Awaiting Fee</div>
         </div>
 
         <div className="bg-white border border-[#D4DCE6] rounded-sm p-3.5 shadow-sm">
-          <div className="text-[11px] font-bold text-[#855A00] uppercase">Awaiting Review</div>
-          <div className="text-xl font-bold text-[#855A00] mt-1">{data?.pendingReviewCount || 0}</div>
-          <div className="text-[11px] text-[#888888] mt-0.5">Pending Initial Screening</div>
+          <div className="text-[11px] font-bold text-[#4B32A6] uppercase">Collected Fees</div>
+          <div className="text-xl font-bold font-mono text-[#4B32A6] mt-1">
+            ₹{data?.totalCollectedFees?.toLocaleString('en-IN', { minimumFractionDigits: 2 }) || '0.00'}
+          </div>
+          <div className="text-[11px] text-[#888888] mt-0.5">Razorpay Net Remittance</div>
         </div>
       </div>
 

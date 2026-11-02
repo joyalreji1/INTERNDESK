@@ -1,7 +1,25 @@
 export type UserRole = 'STUDENT' | 'COMPANY' | 'ADMIN';
 export type AccountStatus = 'ACTIVE' | 'INACTIVE' | 'SUSPENDED' | 'PENDING_VERIFICATION';
 export type VerificationStatus = 'PENDING' | 'VERIFIED' | 'REJECTED' | 'SUSPENDED';
-export type ApplicationStatus = 'APPLIED' | 'UNDER_REVIEW' | 'SHORTLISTED' | 'INTERVIEW' | 'SELECTED' | 'REJECTED' | 'WITHDRAWN';
+export type ApplicationStatus =
+  | 'APPLIED'
+  | 'UNDER_REVIEW'
+  | 'SHORTLISTED'
+  | 'INTERVIEW'
+  | 'SELECTED'
+  | 'PAYMENT_PENDING'
+  | 'ENROLLED'
+  | 'REJECTED'
+  | 'WITHDRAWN';
+export type PaymentStatus =
+  | 'NOT_APPLICABLE'
+  | 'INITIATED'
+  | 'PENDING'
+  | 'SUCCESS'
+  | 'FAILED'
+  | 'REFUND_PENDING'
+  | 'REFUNDED'
+  | 'CANCELLED';
 export type WorkMode = 'REMOTE' | 'HYBRID' | 'ONSITE';
 export type InternshipStatus = 'DRAFT' | 'ACTIVE' | 'CLOSED' | 'CANCELLED';
 
@@ -71,6 +89,38 @@ export interface SkillItem {
   isRequired?: boolean;
 }
 
+export interface InternshipEligibility {
+  id?: number;
+  minimumCgpa?: number;
+  minAcademicPercentage?: number;
+  eligibleDegrees?: string;
+  eligibleDepartments?: string;
+  eligibleSemesters?: string;
+  requiredSkills?: string;
+  requiredCertifications?: string;
+  resumePdfRequired?: boolean;
+  academicDocumentsRequired?: boolean;
+  minQualifications?: string;
+  additionalConditions?: string;
+}
+
+export interface CriterionCheck {
+  criterionName: string;
+  requiredValue: string;
+  studentValue: string;
+  satisfied: boolean;
+  mandatory: boolean;
+  remarks: string;
+}
+
+export interface EligibilityEvaluationResult {
+  eligible: boolean;
+  status: 'ELIGIBLE' | 'NOT_ELIGIBLE' | 'PROFILE_INCOMPLETE' | 'PENDING_VERIFICATION';
+  summary: string;
+  unmetCriteria: string[];
+  criteriaChecks: CriterionCheck[];
+}
+
 export interface Internship {
   id: number;
   companyId: number;
@@ -81,7 +131,11 @@ export interface Internship {
   responsibilities?: string;
   eligibilityCriteria?: string;
   category: string;
-  internshipType: string;
+  internshipType: 'FREE' | 'PAID' | string;
+  internshipFee?: number;
+  currency?: string;
+  refundPolicy?: string;
+  paymentDeadline?: string;
   workMode: WorkMode;
   location?: string;
   durationMonths?: number;
@@ -101,6 +155,8 @@ export interface Internship {
   hasApplied?: boolean;
   isSaved?: boolean;
   createdAt: string;
+  eligibility?: InternshipEligibility;
+  eligibilityEvaluation?: EligibilityEvaluationResult;
 }
 
 export interface ResumeFile {
@@ -132,6 +188,14 @@ export interface Application {
   resumeFilename?: string;
   coverLetter?: string;
   status: ApplicationStatus;
+  eligibilityStatus?: string;
+  selectedAt?: string;
+  paymentStatus?: PaymentStatus;
+  enrolledAt?: string;
+  rejectionReason?: string;
+  internshipFee?: number;
+  currency?: string;
+  internshipType?: string;
   appliedAt: string;
   updatedAt?: string;
   withdrawnAt?: string;
@@ -170,6 +234,84 @@ export interface ApiResponse<T> {
   };
 }
 
+export interface PaymentResponse {
+  id: number;
+  applicationId: number;
+  internshipId: number;
+  internshipTitle: string;
+  companyId: number;
+  companyName: string;
+  studentId: number;
+  studentName: string;
+  studentEmail: string;
+  transactionReference: string;
+  razorpayOrderId?: string;
+  razorpayPaymentId?: string;
+  amount: number;
+  currency: string;
+  status: PaymentStatus;
+  paymentMethod?: string;
+  paidAt?: string;
+  refundStatus?: string;
+  refundAmount?: number;
+  createdAt: string;
+}
+
+export interface PaymentReceiptResponse {
+  receiptNumber: string;
+  transactionReference: string;
+  paymentDate: string;
+  studentName: string;
+  studentEmail: string;
+  studentPhone?: string;
+  companyName: string;
+  internshipTitle: string;
+  amount: number;
+  currency: string;
+  paymentMethod: string;
+  paymentStatus: string;
+  applicationId: number;
+  internshipId: number;
+  razorpayPaymentId: string;
+  razorpayOrderId: string;
+  institutionName: string;
+  verifiedStamp: string;
+}
+
+export interface CompanyPaymentMetrics {
+  companyName: string;
+  totalCollectedFees: number;
+  totalEnrolledCandidates: number;
+  pendingPaymentCount: number;
+  refundCount: number;
+}
+
+export interface AdminPaymentSummary {
+  totalRevenue: number;
+  totalTransactions: number;
+  successfulTransactions: number;
+  pendingTransactions: number;
+  refundedCount: number;
+  refundedVolume: number;
+}
+
+export interface RefundResponse {
+  id: number;
+  paymentId: number;
+  applicationId: number;
+  transactionReference: string;
+  studentName: string;
+  companyName: string;
+  internshipTitle: string;
+  amount: number;
+  currency: string;
+  reason: string;
+  status: 'PENDING' | 'APPROVED' | 'REJECTED' | 'PROCESSED';
+  adminNotes?: string;
+  requestedAt: string;
+  processedAt?: string;
+}
+
 export interface StudentDashboardData {
   welcomeMessage: string;
   totalApplications: number;
@@ -190,6 +332,11 @@ export interface CompanyDashboardData {
   pendingReviewCount: number;
   shortlistedCount: number;
   selectedCount: number;
+  paymentPendingCount?: number;
+  enrolledCount?: number;
+  freeInternshipCount?: number;
+  paidInternshipCount?: number;
+  totalCollectedFees?: number;
   applicantsByStatus: Record<string, number>;
   recentApplicants: Application[];
   myInternships: Internship[];
@@ -203,7 +350,11 @@ export interface AdminDashboardData {
   totalApplications: number;
   pendingCompanyVerifications: number;
   activeInternships: number;
+  freeInternshipCount?: number;
+  paidInternshipCount?: number;
+  paymentPendingCount?: number;
+  enrolledCount?: number;
+  totalPlatformRevenue?: number;
   internshipsByCategory: Record<string, number>;
   unreadNotifications: number;
 }
-

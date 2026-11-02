@@ -13,6 +13,8 @@ import java.util.Optional;
 @Repository
 public interface StudentResumeRepository extends JpaRepository<StudentResume, Long> {
 
+    List<StudentResume> findByStudentId(Long studentId);
+
     List<StudentResume> findByStudentIdOrderByUploadedAtDesc(Long studentId);
 
     Optional<StudentResume> findByStudentIdAndIsPrimaryTrue(Long studentId);

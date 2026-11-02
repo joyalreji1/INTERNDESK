@@ -37,6 +37,8 @@ public class DashboardController {
     private final NotificationService notificationService;
     private final ApplicationService applicationService;
     private final InternshipService internshipService;
+    private final PaymentRepository paymentRepository;
+    private final RefundRepository refundRepository;
 
     @GetMapping("/student")
     @Operation(summary = "Get student dashboard analytics")
@@ -56,12 +58,16 @@ public class DashboardController {
         long shortlisted = applicationRepository.countByStudentIdAndStatus(student.getId(), Application.ApplicationStatus.SHORTLISTED)
             + applicationRepository.countByStudentIdAndStatus(student.getId(), Application.ApplicationStatus.INTERVIEW);
         long selected = applicationRepository.countByStudentIdAndStatus(student.getId(), Application.ApplicationStatus.SELECTED);
+        long paymentPending = applicationRepository.countByStudentIdAndStatus(student.getId(), Application.ApplicationStatus.PAYMENT_PENDING);
+        long enrolled = applicationRepository.countByStudentIdAndStatus(student.getId(), Application.ApplicationStatus.ENROLLED);
         long rejected = applicationRepository.countByStudentIdAndStatus(student.getId(), Application.ApplicationStatus.REJECTED);
 
         dash.setTotalApplications(total);
         dash.setPendingApplications(pending);
         dash.setShortlistedApplications(shortlisted);
         dash.setSelectedApplications(selected);
+        dash.setPaymentPendingApplications(paymentPending);
+        dash.setEnrolledApplications(enrolled);
         dash.setRejectedApplications(rejected);
 
         // Status breakdown for chart
@@ -78,7 +84,7 @@ public class DashboardController {
 
         // Recommended internships (latest 6 active)
         List<InternshipDto.InternshipSummary> recommended = internshipRepository
-            .searchInternships(null, null, null, null, null, null, null,
+            .searchInternships(null, null, null, null, null, null, null, null,
                 java.time.LocalDate.now(), PageRequest.of(0, 6, Sort.by(Sort.Direction.DESC, "createdAt")))
             .getContent().stream().map(internshipService::toSummary).collect(Collectors.toList());
         dash.setRecommendedInternships(recommended);
@@ -101,13 +107,20 @@ public class DashboardController {
             .orElseThrow(() -> new ResourceNotFoundException("Company profile not found"));
 
         DashboardDto.CompanyDashboard dash = new DashboardDto.CompanyDashboard();
+        dash.setTotalInternships(internshipRepository.countByCompanyId(company.getId()));
         dash.setTotalActiveInternships(internshipRepository.countByCompanyIdAndStatus(company.getId(), Internship.InternshipStatus.ACTIVE));
+        dash.setFreeInternships(internshipRepository.countByCompanyIdAndInternshipType(company.getId(), Internship.InternshipType.FREE));
+        dash.setPaidInternships(internshipRepository.countByCompanyIdAndInternshipType(company.getId(), Internship.InternshipType.PAID));
         dash.setTotalApplicants(applicationRepository.countByCompanyId(company.getId()));
         dash.setPendingReviewCount(applicationRepository.countByCompanyIdAndStatus(company.getId(), Application.ApplicationStatus.APPLIED)
             + applicationRepository.countByCompanyIdAndStatus(company.getId(), Application.ApplicationStatus.UNDER_REVIEW));
         dash.setShortlistedCount(applicationRepository.countByCompanyIdAndStatus(company.getId(), Application.ApplicationStatus.SHORTLISTED)
             + applicationRepository.countByCompanyIdAndStatus(company.getId(), Application.ApplicationStatus.INTERVIEW));
         dash.setSelectedCount(applicationRepository.countByCompanyIdAndStatus(company.getId(), Application.ApplicationStatus.SELECTED));
+        dash.setPaymentPendingCount(applicationRepository.countByCompanyIdAndPaymentStatus(company.getId(), Application.PaymentStatus.PENDING));
+        dash.setEnrolledCount(applicationRepository.countByCompanyIdAndStatus(company.getId(), Application.ApplicationStatus.ENROLLED));
+        java.math.BigDecimal collected = paymentRepository.sumCollectedAmountByCompanyId(company.getId());
+        dash.setTotalCollectedFees(collected != null ? collected : java.math.BigDecimal.ZERO);
 
         Map<String, Long> byStatus = new LinkedHashMap<>();
         applicationRepository.countByStatusForCompany(company.getId())
@@ -136,9 +149,14 @@ public class DashboardController {
         dash.setTotalStudents(userRepository.countByRole(User.Role.STUDENT));
         dash.setTotalCompanies(userRepository.countByRole(User.Role.COMPANY));
         dash.setTotalInternships(internshipRepository.count());
+        dash.setFreeInternships(internshipRepository.countByInternshipType(Internship.InternshipType.FREE));
+        dash.setPaidInternships(internshipRepository.countByInternshipType(Internship.InternshipType.PAID));
         dash.setTotalApplications(applicationRepository.count());
         dash.setPendingCompanyVerifications(companyRepository.countByVerificationStatus(Company.VerificationStatus.PENDING));
         dash.setActiveInternships(internshipRepository.countByStatus(Internship.InternshipStatus.ACTIVE));
+        java.math.BigDecimal vol = paymentRepository.sumTotalSuccessfulAmount();
+        dash.setTotalPaymentVolume(vol != null ? vol : java.math.BigDecimal.ZERO);
+        dash.setPendingRefundsCount(refundRepository.findByRefundStatusOrderByCreatedAtDesc(Refund.RefundStatus.REQUESTED).size());
 
         Map<String, Long> byCat = new LinkedHashMap<>();
         internshipRepository.countByCategory()

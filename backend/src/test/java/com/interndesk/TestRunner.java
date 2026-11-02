@@ -1,7 +1,9 @@
 package com.interndesk;
 
 import com.interndesk.service.AuthServiceTest;
+import com.interndesk.service.EligibilityEvaluationServiceTest;
 import com.interndesk.service.InternshipServiceTest;
+import com.interndesk.service.PaymentServiceTest;
 import com.interndesk.workflow.ApplicationWorkflowTest;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.BeforeEach;
@@ -21,6 +23,8 @@ public class TestRunner {
         List<Class<?>> testClasses = List.of(
             AuthServiceTest.class,
             InternshipServiceTest.class,
+            EligibilityEvaluationServiceTest.class,
+            PaymentServiceTest.class,
             ApplicationWorkflowTest.class
         );
 

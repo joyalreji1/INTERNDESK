@@ -28,6 +28,7 @@ public class ApplicationService {
     private final NotificationService notificationService;
     private final UserRepository userRepository;
     private final StudentSkillRepository studentSkillRepository;
+    private final EligibilityEvaluationService eligibilityEvaluationService;
 
     @Transactional
     public ApplicationDto.ApplicationResponse apply(Long internshipId, ApplicationDto.ApplyRequest req, Long userId) {
@@ -49,6 +50,14 @@ public class ApplicationService {
             throw new DuplicateResourceException("You have already applied for this internship.");
         }
 
+        // Automatic eligibility evaluation
+        com.interndesk.dto.InternshipEligibilityDto.EligibilityEvaluationResult eval =
+            eligibilityEvaluationService.evaluate(student, internship);
+        if (!eval.isEligible()) {
+            throw new BusinessException("Application submission blocked: You do not satisfy mandatory academic eligibility criteria: " +
+                String.join("; ", eval.getUnmetCriteria()));
+        }
+
         StudentResume resume = null;
         if (req.getResumeId() != null) {
             resume = resumeRepository.findById(req.getResumeId())
@@ -61,18 +70,25 @@ public class ApplicationService {
             resume = resumeRepository.findByStudentIdAndIsPrimaryTrue(student.getId()).orElse(null);
         }
 
+        Application.EligibilityStatus eligStatus = Application.EligibilityStatus.ELIGIBLE;
+        try {
+            eligStatus = Application.EligibilityStatus.valueOf(eval.getStatus());
+        } catch (Exception ignored) {}
+
         Application application = Application.builder()
             .student(student)
             .internship(internship)
             .resume(resume)
             .coverLetter(req.getCoverLetter())
             .status(Application.ApplicationStatus.APPLIED)
+            .eligibilityStatus(eligStatus)
+            .paymentStatus(Application.PaymentStatus.NOT_APPLICABLE)
             .build();
 
         application = applicationRepository.save(application);
 
         // Record initial status in history
-        recordStatusChange(application, null, Application.ApplicationStatus.APPLIED, userId, "Application submitted.");
+        recordStatusChange(application, null, Application.ApplicationStatus.APPLIED, userId, "Application submitted with verified eligibility.");
 
         // Notify company
         notificationService.createNotification(
@@ -83,7 +99,7 @@ public class ApplicationService {
             application.getId(), "APPLICATION"
         );
 
-        log.info("Student {} applied for internship {}", student.getId(), internshipId);
+        log.info("Student {} successfully applied for internship {}", student.getId(), internshipId);
         return toResponse(application);
     }
 
@@ -119,17 +135,44 @@ public class ApplicationService {
 
         Application.ApplicationStatus prevStatus = application.getStatus();
         application.setStatus(next);
+
         if (next == Application.ApplicationStatus.WITHDRAWN) {
             application.setWithdrawnAt(LocalDateTime.now());
+        } else if (next == Application.ApplicationStatus.SELECTED) {
+            application.setSelectedAt(LocalDateTime.now());
+            Internship intern = application.getInternship();
+            boolean isPaid = intern.getInternshipType() == Internship.InternshipType.PAID ||
+                (intern.getInternshipFee() != null && intern.getInternshipFee().compareTo(java.math.BigDecimal.ZERO) > 0);
+            if (isPaid) {
+                application.setPaymentStatus(Application.PaymentStatus.PENDING);
+                notificationService.createNotification(
+                    application.getStudent().getUser(),
+                    "Action Required: Complete Enrollment Payment",
+                    "Congratulations! You have been selected for '" + intern.getTitle() + "' at " +
+                        intern.getCompany().getCompanyName() + ". Please complete the required participation fee payment of ₹" +
+                        intern.getInternshipFee() + " to confirm your enrollment.",
+                    Notification.NotificationType.PAYMENT_REQUIRED,
+                    application.getId(), "APPLICATION"
+                );
+            }
+        } else if (next == Application.ApplicationStatus.REJECTED) {
+            if (req.getRejectionReason() != null && !req.getRejectionReason().isBlank()) {
+                application.setRejectionReason(req.getRejectionReason().trim());
+            }
+        } else if (next == Application.ApplicationStatus.ENROLLED) {
+            application.setEnrolledAt(LocalDateTime.now());
         }
 
         application = applicationRepository.save(application);
         recordStatusChange(application, prevStatus, next, userId, req.getRemarks());
 
-        // Notify student about status change
-        if (isCompanyOwner) {
+        // Notify student about status change (if not already notified for payment required)
+        if (isCompanyOwner && next != Application.ApplicationStatus.SELECTED) {
             String msg = "Your application for \"" + application.getInternship().getTitle() + "\" at " +
                 application.getInternship().getCompany().getCompanyName() + " has been updated to: " + next.name();
+            if (next == Application.ApplicationStatus.REJECTED && application.getRejectionReason() != null) {
+                msg += ". Reason: " + application.getRejectionReason();
+            }
             notificationService.createNotification(
                 application.getStudent().getUser(),
                 "Application Status Updated",
@@ -233,6 +276,9 @@ public class ApplicationService {
         r.setId(a.getId());
         r.setInternshipId(a.getInternship().getId());
         r.setInternshipTitle(a.getInternship().getTitle());
+        r.setInternshipType(a.getInternship().getInternshipType() != null ? a.getInternship().getInternshipType().name() : "FREE");
+        r.setInternshipFee(a.getInternship().getInternshipFee());
+        r.setCurrency(a.getInternship().getCurrency() != null ? a.getInternship().getCurrency() : "INR");
         r.setCompanyId(a.getInternship().getCompany().getId());
         r.setCompanyName(a.getInternship().getCompany().getCompanyName());
         r.setCompanyLogo(a.getInternship().getCompany().getLogoPath());
@@ -254,6 +300,11 @@ public class ApplicationService {
             }
         } catch (Exception ignored) {}
         r.setStatus(a.getStatus().name());
+        r.setEligibilityStatus(a.getEligibilityStatus() != null ? a.getEligibilityStatus().name() : "ELIGIBLE");
+        r.setSelectedAt(a.getSelectedAt());
+        r.setPaymentStatus(a.getPaymentStatus() != null ? a.getPaymentStatus().name() : "NOT_APPLICABLE");
+        r.setEnrolledAt(a.getEnrolledAt());
+        r.setRejectionReason(a.getRejectionReason());
         r.setCoverLetter(a.getCoverLetter());
         if (a.getResume() != null) {
             r.setResumeId(a.getResume().getId());
@@ -269,6 +320,10 @@ public class ApplicationService {
         ApplicationDto.ApplicationSummary s = new ApplicationDto.ApplicationSummary();
         s.setId(a.getId());
         s.setStatus(a.getStatus().name());
+        s.setEligibilityStatus(a.getEligibilityStatus() != null ? a.getEligibilityStatus().name() : "ELIGIBLE");
+        s.setPaymentStatus(a.getPaymentStatus() != null ? a.getPaymentStatus().name() : "NOT_APPLICABLE");
+        s.setInternshipType(a.getInternship().getInternshipType() != null ? a.getInternship().getInternshipType().name() : "FREE");
+        s.setInternshipFee(a.getInternship().getInternshipFee());
         s.setAppliedAt(a.getAppliedAt());
         s.setInternshipId(a.getInternship().getId());
         s.setInternshipTitle(a.getInternship().getTitle());

@@ -42,6 +42,25 @@ public class Application {
     @Builder.Default
     private ApplicationStatus status = ApplicationStatus.APPLIED;
 
+    @Enumerated(EnumType.STRING)
+    @Column(name = "eligibility_status", nullable = false)
+    @Builder.Default
+    private EligibilityStatus eligibilityStatus = EligibilityStatus.ELIGIBLE;
+
+    @Column(name = "selected_at")
+    private LocalDateTime selectedAt;
+
+    @Enumerated(EnumType.STRING)
+    @Column(name = "payment_status", nullable = false)
+    @Builder.Default
+    private PaymentStatus paymentStatus = PaymentStatus.NOT_APPLICABLE;
+
+    @Column(name = "enrolled_at")
+    private LocalDateTime enrolledAt;
+
+    @Column(name = "rejection_reason", columnDefinition = "TEXT")
+    private String rejectionReason;
+
     @Column(name = "applied_at", nullable = false, updatable = false)
     @CreatedDate
     private LocalDateTime appliedAt;
@@ -54,16 +73,26 @@ public class Application {
     private LocalDateTime withdrawnAt;
 
     public enum ApplicationStatus {
-        APPLIED, UNDER_REVIEW, SHORTLISTED, INTERVIEW, SELECTED, REJECTED, WITHDRAWN;
+        APPLIED, UNDER_REVIEW, SHORTLISTED, INTERVIEW, SELECTED, PAYMENT_PENDING, ENROLLED, REJECTED, WITHDRAWN;
 
         public boolean canTransitionTo(ApplicationStatus next) {
             return switch (this) {
                 case APPLIED        -> next == UNDER_REVIEW || next == REJECTED || next == WITHDRAWN;
                 case UNDER_REVIEW   -> next == SHORTLISTED  || next == REJECTED || next == WITHDRAWN;
-                case SHORTLISTED    -> next == INTERVIEW     || next == REJECTED || next == WITHDRAWN;
-                case INTERVIEW      -> next == SELECTED      || next == REJECTED || next == WITHDRAWN;
-                case SELECTED, REJECTED, WITHDRAWN -> false;
+                case SHORTLISTED    -> next == INTERVIEW    || next == SELECTED || next == REJECTED || next == WITHDRAWN;
+                case INTERVIEW      -> next == SELECTED     || next == REJECTED || next == WITHDRAWN;
+                case SELECTED       -> next == PAYMENT_PENDING || next == ENROLLED || next == REJECTED || next == WITHDRAWN;
+                case PAYMENT_PENDING -> next == ENROLLED     || next == REJECTED || next == WITHDRAWN;
+                case ENROLLED, REJECTED, WITHDRAWN -> false;
             };
         }
+    }
+
+    public enum EligibilityStatus {
+        ELIGIBLE, NOT_ELIGIBLE, PROFILE_INCOMPLETE, PENDING_VERIFICATION
+    }
+
+    public enum PaymentStatus {
+        NOT_APPLICABLE, PENDING, PAID, FAILED, REFUNDED
     }
 }

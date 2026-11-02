@@ -8,6 +8,7 @@ import java.util.List;
 
 @Repository
 public interface StudentCertificationRepository extends JpaRepository<StudentCertification, Long> {
+    List<StudentCertification> findByStudentId(Long studentId);
     List<StudentCertification> findByStudentIdOrderByIssueDateDesc(Long studentId);
 }
 
